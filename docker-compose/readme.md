@@ -5,18 +5,46 @@ To begin developing locally, internal software engineers will need to obtain and
 To startup the Docker containerized BB2 server, run the following command: 
 
 ```
-docker-compose up -d
+start_server.sh
 
 ```
+
+Note that start_server.sh executes docker-compose run after setting up required environment variables per 
+settings in .env
 
 Alternatively, to monitor BB2 server logging:
 
 ```
-docker-compose up -d
 docker-compose logs -f | grep web
 
 ```
 press Ctrl C will stop monitor logging.
+
+To stop the BB2 server, run the following command: 
+
+```
+stop_server.sh
+
+```
+
+Note that stop_server.sh executes docker-compose down to stop and remove the containerized services
+
+## Blue Button server secrets handling:
+
+Blue Button server configuration values: DJANGO_USER_ID_SALT, DJANGO_USER_ID_ITERATIONS, PASSWORD_HASH_ITERATIONS
+are server secrets and stored in password encrypted vault file VAULT_FILE, the password is kept in a password file
+in a secured store such as keybase VAULT_PASSFILE, the following entries in .env have to be set properly to make
+the secrets available to server start script securely and leave no trace outside the secured store and vault file.
+
+REQUIRE_VAULT_ACCESS: when set to true, bluebutton server will retrieve secrets the vault file, when set to
+false, the server will use local default values for local development, no need of access to the vault file. 
+
+```
+REQUIRE_VAULT_ACCESS=false
+VAULT_PASSFILE="path-to-vault-password-file"
+VAULT_FILE="path-to-vault-file"
+FHIR_URL="url to local bfd or bfd on a remote deployment" 
+```
 
 ## Blue Button DB image migrations
 
@@ -30,9 +58,9 @@ DB_MIGRATIONS=true
 the migration creates a super user with below attributes, can be customized in .env:
 
 ```
-SUPER_USER_NAME=root
-SUPER_USER_PASSWORD=blue123
-SUPER_USER_EMAIL=bluebutton@example.com
+SUPERUSER_NAME=root
+SUPERUSER_PASSWORD=blue123
+SUPERUSER_EMAIL=bluebutton@example.com
 ```
 
 if chose not to do db image migrations automatically, follow below steps:
@@ -110,7 +138,6 @@ Multiple arguments can be provided too:
 docker-compose exec web python runtests.py apps.dot_ext.tests apps.accounts.tests.test_login
 ```
 
-
 # Work on Windows
 
 This requires the use of a linux sub system. This includes a choice of Cygwin, WSL, or VirtualBox + Linux.
@@ -140,7 +167,7 @@ Add the line below to the .env file to enable remote PTVSD debugging
 of BB2 server in a docker container:
 
 ```
-BB20_ENABLE_REMOTE_DEBUG=true
+REMOTE_DEBUG=true
 ```
 
 After BB2 server is up, ptvsd is listening on port 5678.
@@ -151,7 +178,7 @@ Add the line below to the .env file to make ptvsd agent wait on attaching, befor
 bluebutton server, this is needed when debugging logic during bluebutton server bootstrap.
 
 ```
-BB2_REMOTE_DEBUG_WAIT_ATTACH=true
+REMOTE_DEBUG_WAIT=true
 ```
 
 ## Remote debugging Blue Button unit tests

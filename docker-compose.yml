@@ -17,14 +17,14 @@ services:
             - "5432:5432"
   web:
     build: . 
-    command: ./docker-compose/bluebutton_server_start.sh '${DB_MIGRATIONS}' '${SUPER_USER_NAME}' '${SUPER_USER_EMAIL}' '${SUPER_USER_PASSWORD}' '${BB20_ENABLE_REMOTE_DEBUG}' '${BB20_REMOTE_DEBUG_WAIT_ATTACH}'
+    command: ./docker-compose/bluebutton_server_start.sh
     environment:
             - DJANGO_SETTINGS_MODULE=hhs_oauth_server.settings.dev
             - DATABASES_CUSTOM=postgres://postgres:toor@db:5432/bluebutton
             - OAUTHLIB_INSECURE_TRANSPORT=true
             - DJANGO_DEFAULT_SAMPLE_FHIR_ID="-20140000008325"
             - DJANGO_SECURE_SESSION=False
-            - FHIR_URL="https://prod-sbx.bfd.cms.gov/v1/fhir/"
+            - FHIR_URL=${FHIR_URL}
             - DJANGO_FHIR_CERTSTORE=/code/docker-compose/certstore/
             - DJANGO_MEDICARE_LOGIN_URI=http://127.0.0.1:8080?scope=openid%20profile&client_id=bluebutton
             - DJANGO_MEDICARE_REDIRECT_URI=http://localhost:8000/mymedicare/sls-callback
@@ -37,6 +37,12 @@ services:
             - DJANGO_SLSX_TOKEN_ENDPOINT=https://test.medicare.gov/sso/session
             - DJANGO_SLSX_USERINFO_ENDPOINT=https://test.accounts.cms.gov/v1/users
             - DJANGO_SLSX_VERIFY_SSL=False
+            - DB_MIGRATIONS=${DB_MIGRATIONS}
+            - SUPERUSER_NAME=${SUPERUSER_NAME}
+            - SUPERUSER_EMAIL=${SUPERUSER_EMAIL}
+            - SUPERUSER_PASSWORD=${SUPERUSER_PASSWORD}
+            - REMOTE_DEBUG=${REMOTE_DEBUG}
+            - REMOTE_DEBUG_WAIT=${REMOTE_DEBUG_WAIT}
     volumes:
       - .:/code
     ports:
@@ -58,4 +64,3 @@ services:
       - "6789:6789"
     volumes:
       - .:/code
-    
