@@ -22,7 +22,20 @@ fi
 
 source .env
 
-for v in REMOTE_DEBUG REMOTE_DEBUG_WAIT SUPERUSER_NAME SUPERUSER_PASSWORD SUPERUSER_EMAIL DB_MIGRATIONS REQUIRE_VAULT_ACCESS VAULT_PASSFILE VAULT_FILE FHIR_URL
+for v in REMOTE_DEBUG \
+REMOTE_DEBUG_WAIT \
+SUPERUSER_NAME \
+SUPERUSER_PASSWORD \
+SUPERUSER_EMAIL \
+DB_MIGRATIONS \
+REQUIRE_VAULT_ACCESS \
+VAULT_PASSFILE \
+VAULT_FILE \
+FHIR_URL \
+HOSTNAME_URL \
+BFD_CLIENT_TRUSTED_PFX \
+CLIENT_CERT_FILE \
+CLIENT_PRIVATE_KEY_FILE
 do
     echo ${v} "=" ${!v}
     t=${!v}
@@ -90,7 +103,7 @@ else
             openssl pkcs12 -in ${BFD_CLIENT_TRUSTED_PFX} -password pass:changeit -nocerts -out ./docker-compose/certstore/ca.key.nocrypt.pem -nodes
             openssl pkcs12 -in ${BFD_CLIENT_TRUSTED_PFX} -password pass:changeit -nokeys -out ./docker-compose/certstore/ca.cert.pem  
         fi
-        if [ -f ${CLIENT_CERT_FILE} ] && [ -f ${CLIENT_PRIVATE_KEY_FILE} ]
+        if [ ! -f ${CLIENT_CERT_FILE} ] && [ ! -f ${CLIENT_PRIVATE_KEY_FILE} ]
         then
             echo "local BFD trusted client cert ${CLIENT_CERT_FILE} and/or private key $CLIENT_PRIVATE_KEY_FILE} not found."
             exit 127
