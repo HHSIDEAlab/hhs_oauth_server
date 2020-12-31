@@ -37,12 +37,13 @@ services:
             - DJANGO_SLSX_TOKEN_ENDPOINT=https://test.medicare.gov/sso/session
             - DJANGO_SLSX_USERINFO_ENDPOINT=https://test.accounts.cms.gov/v1/users
             - DJANGO_SLSX_VERIFY_SSL=False
-            - DB_MIGRATIONS=${DB_MIGRATIONS}
             - SUPERUSER_NAME=${SUPERUSER_NAME}
             - SUPERUSER_EMAIL=${SUPERUSER_EMAIL}
             - SUPERUSER_PASSWORD=${SUPERUSER_PASSWORD}
             - REMOTE_DEBUG=${REMOTE_DEBUG}
             - REMOTE_DEBUG_WAIT=${REMOTE_DEBUG_WAIT}
+            - HOSTNAME_URL=${HOSTNAME_URL}
+            - DB_MIGRATIONS=${DB_MIGRATIONS}
     volumes:
       - .:/code
     ports:

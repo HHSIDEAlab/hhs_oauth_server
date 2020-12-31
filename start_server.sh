@@ -9,14 +9,34 @@
 # e.g. your vault password file in keybase:
 # VAULT_PASSFILE="/keybase/team/bb20/infrastructure/creds/vault_pw.txt"
 # TODO: copy cert/private key pem files from keybase to ./docker-compose/certstore
-# the backend netloc: 
-# local backend: localhost:1337
-# sandbox backend: prod-sbx.bfd.cms.gov
 #
+
+if [ "$#" -gt 1 ]; then
+    echo "Invalid arguments, start_server.sh -h for usage."
+    exit 1
+fi
+
+export DB_MIGRATIONS=true
+
+if [ "$#" -eq 1 ]
+then
+    if  [ $1 = "-h" ] || [ $1 != "-r" ]
+    then
+        echo "Start a bluebutton server in a docker container."
+        echo "start_server.sh -h    Display usage"
+        echo "start_server.sh -r    Restart server (keep django models)"
+        echo "start_server.sh       Start server (perform django models migration)"
+        exit 0
+    fi
+    if [ $1 = "-r" ]
+    then
+        export DB_MIGRATIONS=false
+    fi
+fi
 
 if [ ! -e ".env" ]
 then
-    echo ".env not found, start_server requires settings from .env"
+    echo ".env not found, start_server requires settings from .env, make a copy of .env.example: cp .env.example .env and change the values accordingly."
     exit 127
 fi
 
@@ -27,7 +47,6 @@ REMOTE_DEBUG_WAIT \
 SUPERUSER_NAME \
 SUPERUSER_PASSWORD \
 SUPERUSER_EMAIL \
-DB_MIGRATIONS \
 REQUIRE_VAULT_ACCESS \
 VAULT_PASSFILE \
 VAULT_FILE \
@@ -56,19 +75,29 @@ then
         DJANGO_USER_ID_SALT=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_django_user_id_salt" | awk '{print $2}')
         DJANGO_USER_ID_ITERATIONS=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_django_user_id_iterations" | awk '{print $2}')
         DJANGO_PASSWORD_HASH_ITERATIONS=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_django_password_hash_iterations" | awk '{print $2}')
+
         if [ ! -z ${DJANGO_USER_ID_SALT} ]
         then
             export DJANGO_USER_ID_SALT=${DJANGO_USER_ID_SALT}
         fi
+
         if [ ! -z ${DJANGO_USER_ID_ITERATIONS} ]
         then
             export DJANGO_USER_ID_ITERATIONS=${DJANGO_USER_ID_ITERATIONS}
         fi
+
         if [ ! -z ${DJANGO_PASSWORD_HASH_ITERATIONS} ]
         then
             export DJANGO_PASSWORD_HASH_ITERATIONS=${DJANGO_PASSWORD_HASH_ITERATIONS}
         fi
-        docker-compose stop web
+
+        if [ "${DB_MIGRATIONS}" = true ]
+        then
+            docker-compose down
+        else
+            docker-compose stop web
+        fi
+
         echo "SALT:" ${DJANGO_USER_ID_SALT} ", ITERATIONS:" ${DJANGO_USER_ID_ITERATIONS} ", PASSWORD_HASH_ITERATIONS:" ${DJANGO_PASSWORD_HASH_ITERATIONS} 
         echo "Starting blue button server..., FHIR_URL: " ${FHIR_URL}
         docker-compose run --publish 8000:8000 -p 5678:5678 -e DJANGO_USER_ID_SALT=${DJANGO_USER_ID_SALT} -e DJANGO_USER_ID_ITERATIONS=${DJANGO_USER_ID_ITERATIONS} -e DJANGO_PASSWORD_HASH_ITERATIONS=${DJANGO_PASSWORD_HASH_ITERATIONS} web bash -c "./docker-compose/bluebutton_server_start.sh"
@@ -103,11 +132,20 @@ else
             openssl pkcs12 -in ${BFD_CLIENT_TRUSTED_PFX} -password pass:changeit -nocerts -out ./docker-compose/certstore/ca.key.nocrypt.pem -nodes
             openssl pkcs12 -in ${BFD_CLIENT_TRUSTED_PFX} -password pass:changeit -nokeys -out ./docker-compose/certstore/ca.cert.pem  
         fi
+
         if [ ! -f ${CLIENT_CERT_FILE} ] && [ ! -f ${CLIENT_PRIVATE_KEY_FILE} ]
         then
             echo "local BFD trusted client cert ${CLIENT_CERT_FILE} and/or private key $CLIENT_PRIVATE_KEY_FILE} not found."
             exit 127
         fi
+
+        if [ "${DB_MIGRATIONS}" = true ]
+        then
+            docker-compose down
+        else
+            docker-compose stop web
+        fi
+
         echo "Starting blue button server..., FHIR_URL: " ${FHIR_URL}
         docker-compose run --publish 8000:8000 -p 5678:5678 web bash -c "./docker-compose/bluebutton_server_start.sh"
     else

@@ -1,6 +1,5 @@
 #!/bin/sh
 
-echo "DB_MIGRATIONS = " ${DB_MIGRATIONS}
 echo "SUPERUSER_NAME = " ${SUPERUSER_NAME}
 echo "SUPERUSER_EMAIL = " ${SUPERUSER_EMAIL}
 echo "SUPERUSER_PASSWORD = " ${SUPERUSER_PASSWORD}
@@ -11,30 +10,23 @@ echo "DJANGO_USER_ID_ITERATIONS = " ${DJANGO_USER_ID_ITERATIONS}
 echo "DJANGO_PASSWORD_HASH_ITERATIONS = " ${DJANGO_PASSWORD_HASH_ITERATIONS}
 echo "HOSTNAME_URL = " ${HOSTNAME_URL}
 echo "FHIR_URL = " ${FHIR_URL}
+echo "DB_MIGRATIONS = " ${DB_MIGRATIONS}
 
-if [ -f ./migration.completed ]
+if [ "${DB_MIGRATIONS}" = true ]
 then
-    echo "DB image migrations seems performed in container, skip..."
+    echo "starting server ..., run db image migration and models initialization."
+    python manage.py migrate
+
+    echo "from django.contrib.auth.models import User; User.objects.create_superuser('${SUPERUSER_NAME}', '${SUPERUSER_EMAIL}', '${SUPERUSER_PASSWORD}')" | python manage.py shell
+    python manage.py create_admin_groups
+    python manage.py loaddata scopes.json
+    python manage.py create_blue_button_scopes
+    python manage.py create_test_user_and_application
+    python manage.py create_user_identification_label_selection
+    python manage.py create_test_feature_switches
 else
-    if [ "${DB_MIGRATIONS}" = true ]
-    then
-        echo "DB_MIGRATIONS is true, run db image migration and models initialization."
-        python manage.py migrate
-
-        echo "from django.contrib.auth.models import User; User.objects.create_superuser('${SUPERUSER_NAME}', '${SUPERUSER_EMAIL}', '${SUPERUSER_PASSWORD}')" | python manage.py shell
-        python manage.py create_admin_groups
-        python manage.py loaddata scopes.json
-        python manage.py create_blue_button_scopes
-        python manage.py create_test_user_and_application
-        python manage.py create_user_identification_label_selection
-        python manage.py create_test_feature_switches
-        # this is to prevent restart doing migration again
-        touch migration.completed
-    else
-        echo "DB_MIGRATIONS is false, no db image migration and models initialization will run here, you might need to manually run DB image migrations ..."
-    fi
+    echo "restarting server ..., no db image migration and models initialization will run here, you might need to manually run DB image migrations ..."
 fi
-
 
 if [ ! -d 'bluebutton-css' ]
 then

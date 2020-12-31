@@ -5,22 +5,21 @@ To begin developing locally, internal software engineers will need to obtain and
 To startup the Docker containerized BB2 server, run the following command: 
 
 ```
-start_server.sh
+start_server.sh           Start the server and perform DB migration
+```
+or
+
+```
+start_server.sh -r        Restart the server and keep DB images
 
 ```
 
 Note that start_server.sh executes docker-compose run after setting up required environment variables per 
 settings in .env
 
-Alternatively, to monitor BB2 server logging:
+Note the server is run in foreground and loggings are displayed in current stdout. 
 
-```
-docker-compose logs -f | grep web
-
-```
-press Ctrl C will stop monitor logging.
-
-To stop the BB2 server, run the following command: 
+press Ctrl C will stop the server, or alternatively, run command below:
 
 ```
 stop_server.sh
@@ -36,8 +35,8 @@ are server secrets and stored in password encrypted vault file VAULT_FILE, the p
 in a secured store such as keybase VAULT_PASSFILE, the following entries in .env have to be set properly to make
 the secrets available to server start script securely and leave no trace outside the secured store and vault file.
 
-REQUIRE_VAULT_ACCESS: when set to true, bluebutton server will retrieve secrets the vault file, when set to
-false, the server will use local default values for local development, no need of access to the vault file. 
+REQUIRE_VAULT_ACCESS: when set to true, bluebutton server will retrieve secrets the vault file, this is when the bfd
+server is running on a remote environmemt, e.g. prod sandbox; when set to false, the server will use local default values for communicating with bfd server running on local host, no need of access to the vault file.
 
 ```
 REQUIRE_VAULT_ACCESS=false
@@ -46,14 +45,27 @@ VAULT_FILE="path-to-vault-file"
 FHIR_URL="url to local bfd or bfd on a remote deployment" 
 ```
 
+when bfd server is running on localhost, below values have to be set properly such that ssl communication 
+can be established between bb2 and bfd, note, BFD_CLIENT_TRUSTED_PFX can be left unset if CLIENT_CERT_FILE
+and CLIENT_PRIVATE_KEY_FILE have client cert and private key in .pem format available:
+
+```
+BFD_CLIENT_TRUSTED_PFX="../beneficiary-fhir-data/apps/bfd-server/dev/ssl-stores/client-trusted-keystore.pfx"
+CLIENT_CERT_FILE="./docker-compose/certstore/ca.cert.pem"
+CLIENT_PRIVATE_KEY_FILE="./docker-compose/certstore/ca.key.nocrypt.pem"
+```
+
+HOSTNAME_URL needs to be set with local host IP as shown below example, this is required to make service in container
+work properly:
+
+```
+HOSTNAME_URL="http://192.168.0.109:8000"
+```
+
 ## Blue Button DB image migrations
 
 DB image migrations is done in docker container before blue button server is started.
-this is enabled by adding below line to .env:
-
-```
-DB_MIGRATIONS=true
-```
+this is done during execution of start_server.sh.
 
 the migration creates a super user with below attributes, can be customized in .env:
 
@@ -63,16 +75,23 @@ SUPERUSER_PASSWORD=blue123
 SUPERUSER_EMAIL=bluebutton@example.com
 ```
 
-if chose not to do db image migrations automatically, follow below steps:
-
-set the flag to false before run docker-compose up:
+if chose to start server without db image migrations, use command below:
 
 ```
-DB_MIGRATIONS=false
+start_server.sh -r
 ```
 
 If you're working with a fresh db image
 the migrations have to be run.
+
+so either run start_server.sh as below:
+
+```
+start_server.sh
+
+```
+
+or perform the migration separately:
 
 ```
 docker-compose exec web docker-compose/migrate.sh
