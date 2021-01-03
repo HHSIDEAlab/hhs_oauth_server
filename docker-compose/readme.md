@@ -31,32 +31,32 @@ Note that stop_server.sh executes docker-compose down to stop and remove the con
 ## Blue Button server secrets handling:
 
 Blue Button server configuration values: DJANGO_USER_ID_SALT, DJANGO_USER_ID_ITERATIONS, PASSWORD_HASH_ITERATIONS
-are server secrets and stored in password encrypted vault file VAULT_FILE, the password is kept in a password file
-in a secured store such as keybase VAULT_PASSFILE, the following entries in .env have to be set properly to make
-the secrets available to server start script securely and leave no trace outside the secured store and vault file.
+are server secrets and stored in password encrypted vault file, the password is kept in a password file
+stored in a secured store (such as keybase), the following entries in .env have to be set properly to make
+the secrets available to server start process securely and leave no trace outside the secured store and vault file.
+ 
+when the fhir data server is a local bfd, the salt, iterations etc. use default values in blue button server settings,
+the client cert and key files, if not already available at blue button server certstore, are extracted from bfd 
+local repo (must be available) and copied to certstore automatically.
 
-USE_LOCAL_BFD: when set to true, bluebutton server will retrieve secrets the vault file, this is when the bfd
-server is running on a remote environmemt, e.g. prod sandbox; when set to false, the server will use local default values for communicating with bfd server running on local host, no need of access to the vault file, FHIR_CERTSTORE_ON_HOST is
-the directory on host machine where remote bfd client cert and key files are stored (usually in secured store such as keybase),
-and the name of the cert and key files need to be indicated by FHIR_CERT_FILE and FHIR_KEY_FILE if they are different from the defaults, i.e. ca.cert.pem and ca.key.nocrypt.pem respectively.
+```
+USE_LOCAL_BFD=true
+FHIR_URL="url to local bfd e.g. https://192.168.0.109:1337/v1/fhir/"
+BFD_CLIENT_TRUSTED_PFX="path to client-trusted-keystore.pfx in bfd local repo"
+
+```
+
+when the fhir server is a remote bfd, the salt, iterations etc. are extracted from the vault file, and the password
+is stored in a secured store (e.g. keybase), the client cert and key files are stored in secured store, and indicated by
+SRC_CERT_FILE, SRC_KEY_FILE, and are copied to blue button server certstore automatically if they are not there already.
 
 ```
 USE_LOCAL_BFD=false
-VAULT_PASSFILE="path-to-vault-password-file"
-VAULT_FILE="path-to-vault-file"
-FHIR_URL="url to local bfd or bfd on a remote deployment" 
-FHIR_CERTSTORE_ON_HOST="C:/CERTS/prod-sbx"
-
-```
-
-when bfd server is running on localhost, below values have to be set properly such that ssl communication 
-can be established between bb2 and bfd, note, BFD_CLIENT_TRUSTED_PFX can be left unset if FHIR_CERT_FILE
-and FHIR_KEY_FILE have client cert and private key in .pem format available:
-
-```
-BFD_CLIENT_TRUSTED_PFX="../beneficiary-fhir-data/apps/bfd-server/dev/ssl-stores/client-trusted-keystore.pfx"
-FHIR_CERT_FILE="./docker-compose/certstore/ca.cert.pem"
-FHIR_KEY_FILE="./docker-compose/certstore/ca.key.nocrypt.pem"
+VAULT_PASSFILE="path-to-vault-password-file" (usually in secured store)
+VAULT_FILE="path-to-vault-file" (in bluebutton-web-deployment local repo)
+SRC_CERT_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_certificate.pem" ()
+SRC_KEY_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_private_key.pem"
+FHIR_URL="url to remote bfd e.g. https://prod-sbx.bfd.cms.gov/v1/fhir/"
 
 ```
 
@@ -83,7 +83,7 @@ SUPERUSER_EMAIL=bluebutton@example.com
 if chose to start server without db image migrations, use command below:
 
 ```
-start_server.sh -r
+start_server.sh -r (or --restart)
 ```
 
 If you're working with a fresh db image

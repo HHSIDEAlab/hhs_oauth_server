@@ -47,7 +47,6 @@ services:
             - FHIR_CERTSTORE_ON_HOST=${FHIR_CERTSTORE_ON_HOST}
     volumes:
       - .:/code
-      - ${FHIR_CERTSTORE_ON_HOST}:${DJANGO_FHIR_CERTSTORE}:ro
     ports:
       - "8000:8000"
       - "5678:5678"

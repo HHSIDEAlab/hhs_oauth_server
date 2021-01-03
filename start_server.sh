@@ -14,11 +14,9 @@
 # for fhir client cert and key files:
 # for BFD local: the script will extract the cert and key from location indicated by BFD_CLIENT_TRUSTED_PFX
 # usually in a BFD local repo;
-# for BFD on remote env: the cert and key are stored in secured store e.g. keybase, you must logged in to
-# the secured store and have access to the cert and key files indicated by FHIR_CERTSTORE_ON_HOST and 
-# optionally FHIR_CERT_FILE (ca.cert.pem) and FHIR_KEY_FILE (ca.key.nocrypt.pem) if the .pem files name 
-# are different from defaults, e.g.
-# FHIR_CERTSTORE_ON_HOST="/keybase/my_secured_folder/certstore"
+# for BFD on remote env: the cert and key are usually stored in secured store e.g. keybase, you must logged in to
+# the secured store and have access to the cert and key files indicated by SRC_CERT_FILE and SRC_KEY_FILE
+
 
 function export_vars() {
     source .env
@@ -33,8 +31,8 @@ function export_vars() {
     FHIR_URL \
     HOSTNAME_URL \
     BFD_CLIENT_TRUSTED_PFX \
-    FHIR_CERT_FILE \
-    FHIR_KEY_FILE \
+    SRC_CERT_FILE \
+    SRC_KEY_FILE \
     FHIR_CERTSTORE_ON_HOST
     do
         echo ${v} "=" ${!v}
@@ -115,6 +113,12 @@ function start_server_with_remote_bfd() {
         if [ ! -z ${DJANGO_PASSWORD_HASH_ITERATIONS} ]
         then
             export DJANGO_PASSWORD_HASH_ITERATIONS=${DJANGO_PASSWORD_HASH_ITERATIONS}
+        fi
+
+        if [ -f "${SRC_CERT_FILE}" ] && [ -f "${SRC_KEY_FILE}" ]
+        then
+            yes | cp -rf ${SRC_CERT_FILE} ${FHIR_CERTSTORE_ON_HOST}/${FHIR_CERT_FILE}
+            yes | cp -rf ${SRC_KEY_FILE} ${FHIR_CERTSTORE_ON_HOST}/${FHIR_KEY_FILE}
         fi
 
         if [ ! -f "${FHIR_CERTSTORE_ON_HOST}/${FHIR_CERT_FILE}" ] && [ ! -f "${FHIR_CERTSTORE_ON_HOST}/${FHIR_KEY_FILE}" ]
