@@ -14,7 +14,7 @@ echo "DB_MIGRATIONS = " ${DB_MIGRATIONS}
 
 if [ "${DB_MIGRATIONS}" = true ]
 then
-    echo "starting server ..., run db image migration and models initialization."
+    echo "run db image migration and models initialization."
     python manage.py migrate
 
     echo "from django.contrib.auth.models import User; User.objects.create_superuser('${SUPERUSER_NAME}', '${SUPERUSER_EMAIL}', '${SUPERUSER_PASSWORD}')" | python manage.py shell
@@ -25,7 +25,7 @@ then
     python manage.py create_user_identification_label_selection
     python manage.py create_test_feature_switches
 else
-    echo "restarting server ..., no db image migration and models initialization will run here, you might need to manually run DB image migrations ..."
+    echo "restarting blue button server, no db image migration and models initialization will run here, you might need to manually run DB image migrations."
 fi
 
 if [ ! -d 'bluebutton-css' ]
@@ -39,13 +39,13 @@ if [ "${REMOTE_DEBUG}" = true ]
 then
     if [ "${REMOTE_DEBUG_WAIT}" = true ]
     then
-        echo "Start bluebutton server with remote debugging and wait attach..."
+        echo "Start blue button server with remote debugging and wait attach."
         python3 -m ptvsd --host 0.0.0.0 --port 5678 --wait manage.py runserver 0.0.0.0:8000 --noreload
     else
-        echo "Start bluebutton server with remote debugging..."
+        echo "Start blue button server with remote debugging."
         python3 -m ptvsd --host 0.0.0.0 --port 5678 manage.py runserver 0.0.0.0:8000 --noreload
     fi
 else
-    echo "Start bluebutton server ..."
+    echo "Start blue button server."
     python3 manage.py runserver 0.0.0.0:8000
 fi

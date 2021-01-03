@@ -35,24 +35,29 @@ are server secrets and stored in password encrypted vault file VAULT_FILE, the p
 in a secured store such as keybase VAULT_PASSFILE, the following entries in .env have to be set properly to make
 the secrets available to server start script securely and leave no trace outside the secured store and vault file.
 
-REQUIRE_VAULT_ACCESS: when set to true, bluebutton server will retrieve secrets the vault file, this is when the bfd
-server is running on a remote environmemt, e.g. prod sandbox; when set to false, the server will use local default values for communicating with bfd server running on local host, no need of access to the vault file.
+USE_LOCAL_BFD: when set to true, bluebutton server will retrieve secrets the vault file, this is when the bfd
+server is running on a remote environmemt, e.g. prod sandbox; when set to false, the server will use local default values for communicating with bfd server running on local host, no need of access to the vault file, FHIR_CERTSTORE_ON_HOST is
+the directory on host machine where remote bfd client cert and key files are stored (usually in secured store such as keybase),
+and the name of the cert and key files need to be indicated by FHIR_CERT_FILE and FHIR_KEY_FILE if they are different from the defaults, i.e. ca.cert.pem and ca.key.nocrypt.pem respectively.
 
 ```
-REQUIRE_VAULT_ACCESS=false
+USE_LOCAL_BFD=false
 VAULT_PASSFILE="path-to-vault-password-file"
 VAULT_FILE="path-to-vault-file"
 FHIR_URL="url to local bfd or bfd on a remote deployment" 
+FHIR_CERTSTORE_ON_HOST="C:/CERTS/prod-sbx"
+
 ```
 
 when bfd server is running on localhost, below values have to be set properly such that ssl communication 
-can be established between bb2 and bfd, note, BFD_CLIENT_TRUSTED_PFX can be left unset if CLIENT_CERT_FILE
-and CLIENT_PRIVATE_KEY_FILE have client cert and private key in .pem format available:
+can be established between bb2 and bfd, note, BFD_CLIENT_TRUSTED_PFX can be left unset if FHIR_CERT_FILE
+and FHIR_KEY_FILE have client cert and private key in .pem format available:
 
 ```
 BFD_CLIENT_TRUSTED_PFX="../beneficiary-fhir-data/apps/bfd-server/dev/ssl-stores/client-trusted-keystore.pfx"
-CLIENT_CERT_FILE="./docker-compose/certstore/ca.cert.pem"
-CLIENT_PRIVATE_KEY_FILE="./docker-compose/certstore/ca.key.nocrypt.pem"
+FHIR_CERT_FILE="./docker-compose/certstore/ca.cert.pem"
+FHIR_KEY_FILE="./docker-compose/certstore/ca.key.nocrypt.pem"
+
 ```
 
 HOSTNAME_URL needs to be set with local host IP as shown below example, this is required to make service in container

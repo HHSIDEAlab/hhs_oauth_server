@@ -25,7 +25,7 @@ services:
             - DJANGO_DEFAULT_SAMPLE_FHIR_ID="-20140000008325"
             - DJANGO_SECURE_SESSION=False
             - FHIR_URL=${FHIR_URL}
-            - DJANGO_FHIR_CERTSTORE=/code/docker-compose/certstore/
+            - DJANGO_FHIR_CERTSTORE=${DJANGO_FHIR_CERTSTORE}
             - DJANGO_MEDICARE_LOGIN_URI=http://127.0.0.1:8080?scope=openid%20profile&client_id=bluebutton
             - DJANGO_MEDICARE_REDIRECT_URI=http://localhost:8000/mymedicare/sls-callback
             - DJANGO_SLS_USERINFO_ENDPOINT=http://msls:8080/userinfo
@@ -44,8 +44,10 @@ services:
             - REMOTE_DEBUG_WAIT=${REMOTE_DEBUG_WAIT}
             - HOSTNAME_URL=${HOSTNAME_URL}
             - DB_MIGRATIONS=${DB_MIGRATIONS}
+            - FHIR_CERTSTORE_ON_HOST=${FHIR_CERTSTORE_ON_HOST}
     volumes:
       - .:/code
+      - ${FHIR_CERTSTORE_ON_HOST}:${DJANGO_FHIR_CERTSTORE}:ro
     ports:
       - "8000:8000"
       - "5678:5678"
