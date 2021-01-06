@@ -6,6 +6,10 @@ services:
       context: ./dev-local/msls
       dockerfile: Dockerfile
     command: msls
+    environment:
+            - SAMPLE_FHIR_ID_LIST=${SAMPLE_FHIR_ID_LIST}
+            - SAMPLE_MBI_LIST=${SAMPLE_MBI_LIST}
+            - SAMPLE_HICN_LIST=${SAMPLE_HICN_LIST}
     ports:
       - "8080:8080"
   db:
@@ -22,7 +26,7 @@ services:
             - DJANGO_SETTINGS_MODULE=hhs_oauth_server.settings.dev
             - DATABASES_CUSTOM=postgres://postgres:toor@db:5432/bluebutton
             - OAUTHLIB_INSECURE_TRANSPORT=true
-            - DJANGO_DEFAULT_SAMPLE_FHIR_ID="-20140000008325"
+            - DJANGO_DEFAULT_SAMPLE_FHIR_ID=${DJANGO_DEFAULT_SAMPLE_FHIR_ID}
             - DJANGO_SECURE_SESSION=False
             - FHIR_URL=${FHIR_URL}
             - DJANGO_FHIR_CERTSTORE=${DJANGO_FHIR_CERTSTORE}
@@ -44,7 +48,6 @@ services:
             - REMOTE_DEBUG_WAIT=${REMOTE_DEBUG_WAIT}
             - HOSTNAME_URL=${HOSTNAME_URL}
             - DB_MIGRATIONS=${DB_MIGRATIONS}
-            - FHIR_CERTSTORE_ON_HOST=${FHIR_CERTSTORE_ON_HOST}
     volumes:
       - .:/code
     ports:

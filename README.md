@@ -151,6 +151,12 @@ Multiple arguments can be provided too:
 python runtests.py apps.dot_ext.tests apps.accounts.tests.test_login 
 ```
 
+Setup Development Local
+-----------------------
+
+Development work can be done on a local machine, for details, check out readme at:
+https://github.com/CMSgov/bluebutton-web-server/blob/master/docker-compose/readme.md
+
 
 Using this Project
 ------------------

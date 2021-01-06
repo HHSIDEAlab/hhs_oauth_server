@@ -25,6 +25,9 @@ function export_vars() {
     SUPERUSER_NAME \
     SUPERUSER_PASSWORD \
     SUPERUSER_EMAIL \
+    SAMPLE_FHIR_ID_LIST \
+    SAMPLE_MBI_LIST \
+    SAMPLE_HICN_LIST \
     USE_LOCAL_BFD \
     VAULT_PASSFILE \
     VAULT_FILE \
@@ -186,6 +189,27 @@ then
 fi
 
 export_vars
+
+if [ ! -z ${SAMPLE_FHIR_ID_LIST} ] && [ ! -z ${SAMPLE_MBI_LIST} ] && [ ! -z ${SAMPLE_HICN_LIST} ]
+then
+    id_list=(${SAMPLE_FHIR_ID_LIST//,/ })
+    mbi_list=(${SAMPLE_MBI_LIST//,/ })
+    hicn_list=(${SAMPLE_HICN_LIST//,/ })
+    id_list_len=${#id_list[@]}
+    mbi_list_len=${#mbi_list[@]}
+    hicn_list_len=${#hicn_list[@]}
+    if [ "$id_list_len" -gt 0 ] && [ "$id_list_len" -eq "$mbi_list_len" ] && [ "$mbi_list_len" -eq "$hicn_list_len" ]
+    then
+        export DJANGO_DEFAULT_SAMPLE_FHIR_ID="${id_list[0]}"
+        export DJANGO_DEFAULT_SAMPLE_MBI="${mbi_list[0]}"
+        export DJANGO_DEFAULT_SAMPLE_HICN="${hicn_list[0]}"
+    fi 
+else
+    if [ ! -z ${SAMPLE_FHIR_ID_LIST} ] || [ ! -z ${SAMPLE_MBI_LIST} ] || [ ! -z ${SAMPLE_HICN_LIST} ]
+    then
+        echo "Warning: Inconsistent detected among SAMPLE_FHIR_ID_LIST, SAMPLE_MBI_LIST, SAMPLE_HICN_LIST, samples ignored."
+    fi
+fi
 
 if [ -z ${FHIR_CERT_FILE} ]
 then

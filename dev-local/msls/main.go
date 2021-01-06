@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	// "io/ioutil"
+	"os"
 	"html/template"
 	"log"
 	"net/http"
@@ -44,6 +46,14 @@ const (
 	AUTH_HEADER       = "Authorization"
 )
 
+type LoginPageData struct {
+    HelpMessage string
+	State       string
+	Redirect_uri    string
+	MbiValues   []string
+	HicnValues  []string
+}
+
 func logRequest(w http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		v, err := httputil.DumpRequest(r, true)
@@ -52,7 +62,22 @@ func logRequest(w http.Handler) http.Handler {
 	})
 }
 
+var mbi_list = os.Getenv("SAMPLE_MBI_LIST")
+var hicn_list = os.Getenv("SAMPLE_HICN_LIST")
+var fhir_id_list = os.Getenv("SAMPLE_FHIR_ID_LIST")
+var mbi_array = strings.Split(mbi_list, ",")
+var hicn_array = strings.Split(hicn_list, ",")
+var fhir_id_array = strings.Split(fhir_id_list, ",")
+var samples_info = `Sample beneficaries:`
+
 func main() {
+	
+	if len(mbi_array) == len(hicn_array) && len(fhir_id_array) == len(hicn_array) && len(mbi_array) > 0 {
+	  for i := 0; i < len(mbi_array); i++ {
+		samples_info += fmt.Sprintf("{fhir_id=%s, mbi=%s, hicn=%s}", fhir_id_array[i], mbi_array[i], hicn_array[i])
+	  }
+	}
+
 	t := template.Must(template.New("loginpage").Parse(login_template))
 	http.Handle("/", logRequest(presentLogin(t)))
 
@@ -91,9 +116,15 @@ func handleUserinfo(rw http.ResponseWriter, r *http.Request) {
 
 func presentLogin(t *template.Template) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		var login_data LoginPageData
+		login_data.HelpMessage = samples_info
+		login_data.MbiValues = mbi_array
+		login_data.HicnValues = hicn_array
 		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 		r.ParseForm()
-		t.Execute(rw, r.Form)
+		login_data.State = r.FormValue("state")
+		login_data.Redirect_uri = r.FormValue("redirect_uri")
+		t.Execute(rw, login_data)
 	})
 }
 

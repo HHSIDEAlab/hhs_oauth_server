@@ -1,6 +1,14 @@
 # Local Docker Development
 
-To begin developing locally, internal software engineers will need to obtain and copy the `bb2-local-client` certificate files in to the `docker-compose/certstore` location to support the connection to the BFD FHIR server.
+To begin developing locally, internal software engineers will need to obtain and copy the `bb2-local-client` certificate files in to the `docker-compose/certstore` location to support the connection to the BFD FHIR server (this can be automated by start server script, read on).
+
+Before launch the server, set up environment by create a .env from template .env.example:
+
+```
+cp .env.example .env
+
+```
+then customize .env properly per your local development environment.
 
 To startup the Docker containerized BB2 server, run the following command: 
 
@@ -10,16 +18,13 @@ start_server.sh           Start the server and perform DB migration
 or
 
 ```
-start_server.sh -r        Restart the server and keep DB images
+start_server.sh -r        Restart the server without performing DB migration (keep DB images)
 
 ```
 
 Note that start_server.sh executes docker-compose run after setting up required environment variables per 
-settings in .env
-
-Note the server is run in foreground and loggings are displayed in current stdout. 
-
-press Ctrl C will stop the server, or alternatively, run command below:
+settings in .env; the server is run in foreground and loggings are displayed in current stdout, press Ctrl C
+to stop the server, or alternatively, run command below:
 
 ```
 stop_server.sh
@@ -28,43 +33,44 @@ stop_server.sh
 
 Note that stop_server.sh executes docker-compose down to stop and remove the containerized services
 
-## Blue Button server secrets handling:
+## Secured blue button server secrets handling:
 
 Blue Button server configuration values: DJANGO_USER_ID_SALT, DJANGO_USER_ID_ITERATIONS, PASSWORD_HASH_ITERATIONS
 are server secrets and stored in password encrypted vault file, the password is kept in a password file
-stored in a secured store (such as keybase), the following entries in .env have to be set properly to make
-the secrets available to server start process securely and leave no trace outside the secured store and vault file.
+stored in a secured store (e.g. keybase), the following variables in .env need to be set properly to make
+the secrets available to server start process and leave no trace of the secret values outside the secured store and vault file.
  
-when the fhir data server is a local bfd, the salt, iterations etc. use default values in blue button server settings,
+When the fhir server is a local bfd, the salt, iterations etc. use default values in blue button server settings,
 the client cert and key files, if not already available at blue button server certstore, are extracted from bfd 
-local repo (must be available) and copied to certstore automatically.
+local git repo to blue button server certstore automatically.
 
 ```
 USE_LOCAL_BFD=true
-FHIR_URL="url to local bfd e.g. https://192.168.0.109:1337/v1/fhir/"
-BFD_CLIENT_TRUSTED_PFX="path to client-trusted-keystore.pfx in bfd local repo"
+FHIR_URL="url to local bfd, e.g. https://192.168.0.109:1337/v1/fhir/"
+BFD_CLIENT_TRUSTED_PFX="path to client-trusted-keystore.pfx in bfd local git repo"
 
 ```
 
-when the fhir server is a remote bfd, the salt, iterations etc. are extracted from the vault file, and the password
+When the fhir server is a remote bfd, the salt, iterations etc. are extracted from the vault file, and the password
 is stored in a secured store (e.g. keybase), the client cert and key files are stored in secured store, and indicated by
 SRC_CERT_FILE, SRC_KEY_FILE, and are copied to blue button server certstore automatically if they are not there already.
 
 ```
 USE_LOCAL_BFD=false
-VAULT_PASSFILE="path-to-vault-password-file" (usually in secured store)
-VAULT_FILE="path-to-vault-file" (in bluebutton-web-deployment local repo)
-SRC_CERT_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_certificate.pem" ()
-SRC_KEY_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_private_key.pem"
 FHIR_URL="url to remote bfd e.g. https://prod-sbx.bfd.cms.gov/v1/fhir/"
+VAULT_PASSFILE="path-to-vault-password-file" (usually in secured store)
+VAULT_FILE="path-to-vault-file" (in bluebutton-web-deployment local git repo)
+SRC_CERT_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_certificate.pem" (usually in secured store)
+SRC_KEY_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_private_key.pem" (usually in secured store)
 
 ```
 
-HOSTNAME_URL needs to be set with local host IP as shown below example, this is required to make service in container
-work properly:
+Blue Button server url is indicated as HOSTNAME_URL needs to be set with local host IP,
+as shown in sample below, this is required to make service in container work properly:
 
 ```
 HOSTNAME_URL="http://192.168.0.109:8000"
+
 ```
 
 ## Blue Button DB image migrations
