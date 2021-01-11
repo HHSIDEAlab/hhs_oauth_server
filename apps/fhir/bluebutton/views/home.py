@@ -5,6 +5,7 @@ from collections import OrderedDict
 from urllib.parse import urlencode
 from django.http import JsonResponse
 from django.shortcuts import HttpResponse
+from oauth2_provider.compat import urlparse
 from apps.fhir.bluebutton import constants
 from apps.fhir.bluebutton.utils import (request_call,
                                         prepend_q,
@@ -30,6 +31,15 @@ def fhir_conformance(request, via_oauth=False, *args, **kwargs):
     crosswalk = None
     resource_router = get_resourcerouter()
     call_to = resource_router.fhir_url
+
+    parsed_url = urlparse(resource_router.fhir_url)
+    if parsed_url.path is not None:
+        call_to = '{}://{}/{}/fhir/metadata'.format(parsed_url.scheme, parsed_url.netloc,
+                                                    'v2' if request.session['api_ver'] == 'v2' else 'v1')
+    else:
+        # url with no path
+        call_to = '{}/{}/fhir/metadata'.format(resource_router.fhir_url,
+                                               'v2' if request.session['api_ver'] == 'v2' else 'v1')
 
     if call_to.endswith('/'):
         call_to += 'metadata'

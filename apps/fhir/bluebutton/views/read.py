@@ -41,7 +41,13 @@ class ReadView(FhirDataView):
         }
 
     def build_url(self, resource_router, resource_type, resource_id, **kwargs):
-        return resource_router.fhir_url + resource_type + "/" + resource_id + "/"
+        api_ver = kwargs.get('ver')
+        if resource_router.fhir_url.endswith('v1/fhir/'):
+            # only if called by tests
+            return "{}{}/{}/".format(resource_router.fhir_url, resource_type, resource_id)
+        else:
+            return "{}/{}/fhir/{}/{}/".format(resource_router.fhir_url, api_ver,
+                                              resource_type, resource_id)
 
 
 class ReadViewPatient(ReadView):

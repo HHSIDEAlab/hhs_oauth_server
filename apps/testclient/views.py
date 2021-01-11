@@ -26,7 +26,13 @@ def callback(request):
     if not(host.startswith("http://") or host.startswith("https://")):
         host = "https://%s" % (host)
     auth_uri = host + request.get_full_path()
+    # make correction when it is for v2
+    # 'http://192.168.0.109:8000/v1/o/token/'
     token_uri = host + reverse('oauth2_provider:token')
+    request.session['api_ver'] = 'v1'
+    if request.path.endswith('callback-v2'):
+        token_uri = token_uri.replace('/v1/o/token/', '/v2/o/token/')
+        request.session['api_ver'] = 'v2'
     try:
         token = oas.fetch_token(token_uri,
                                 client_secret=get_client_secret(),
@@ -70,7 +76,8 @@ def test_userinfo(request):
         return redirect('test_links', permanent=True)
     oas = OAuth2Session(
         request.session['client_id'], token=request.session['token'])
-    userinfo_uri = "%s/v1/connect/userinfo" % (request.session['resource_uri'])
+    userinfo_uri = "{}/{}/connect/userinfo".format(
+        request.session['resource_uri'], 'v2' if request.session['api_ver'] == 'v2' else 'v1')
     userinfo = oas.get(userinfo_uri).json()
     return JsonResponse(userinfo)
 
@@ -81,8 +88,8 @@ def test_coverage(request):
         return redirect('test_links', permanent=True)
     oas = OAuth2Session(
         request.session['client_id'], token=request.session['token'])
-    coverage_uri = "%s/v1/fhir/Coverage/?_format=json" % (
-        request.session['resource_uri'])
+    coverage_uri = "{}/{}/fhir/Coverage/?_format=json".format(
+        request.session['resource_uri'], 'v2' if request.session['api_ver'] == 'v2' else 'v1')
 
     coverage = oas.get(coverage_uri).json()
     return JsonResponse(coverage, safe=False)
@@ -94,8 +101,8 @@ def test_patient(request):
         return redirect('test_links', permanent=True)
     oas = OAuth2Session(
         request.session['client_id'], token=request.session['token'])
-    patient_uri = "%s/v1/fhir/Patient/%s?_format=json" % (
-        request.session['resource_uri'], request.session['patient'])
+    patient_uri = "{}/{}/fhir/Patient/{}?_format=json".format(
+        request.session['resource_uri'], 'v2' if request.session['api_ver'] == 'v2' else 'v1', request.session['patient'])
     patient = oas.get(patient_uri).json()
     return JsonResponse(patient)
 
@@ -106,14 +113,14 @@ def test_eob(request):
         return redirect('test_links', permanent=True)
     oas = OAuth2Session(
         request.session['client_id'], token=request.session['token'])
-    eob_uri = "%s/v1/fhir/ExplanationOfBenefit/?_format=json" % (
-        request.session['resource_uri'])
+    eob_uri = "{}/{}/fhir/ExplanationOfBenefit/?_format=json".format(
+        request.session['resource_uri'], 'v2' if request.session['api_ver'] == 'v2' else 'v1')
     eob = oas.get(eob_uri).json()
     return JsonResponse(eob)
 
 
 def authorize_link(request):
-    request.session.update(test_setup())
+    request.session.update(test_setup(v2=True if request.path.endswith('authorize-link-v2') else False))
     oas = OAuth2Session(request.session['client_id'],
                         redirect_uri=request.session['redirect_uri'])
     authorization_url = oas.authorization_url(

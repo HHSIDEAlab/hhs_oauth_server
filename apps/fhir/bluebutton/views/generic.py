@@ -91,10 +91,11 @@ class FhirDataView(APIView):
 
     def fetch_data(self, request, resource_type, *args, **kwargs):
         resource_router = get_resourcerouter(request.crosswalk)
+        api_ver = 'v2' if request.path.startswith("/v2") else 'v1'
         target_url = self.build_url(resource_router,
                                     resource_type,
                                     *args,
-                                    **kwargs)
+                                    **dict(kwargs, ver=api_ver))
 
         logger.debug('FHIR URL with key:%s' % target_url)
 

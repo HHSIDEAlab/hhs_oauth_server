@@ -257,8 +257,11 @@ def callback(request):
 
     # Only go back to app authorization
     auth_uri = reverse('oauth2_provider:authorize-instance', args=[approval.uuid])
-    _, _, auth_path, _, _ = urlsplit(auth_uri)
 
+    if path.startswith('/v2/o/authorize/') and auth_uri.startswith('/v1/o/authorize/'):
+        auth_uri = auth_uri.replace("/v1/o/authorize/", "/v2/o/authorize/")
+
+    _, _, auth_path, _, _ = urlsplit(auth_uri)
     return HttpResponseRedirect(urlunsplit((scheme, netloc, auth_path, query_string, fragment)))
 
 
@@ -287,19 +290,28 @@ def mymedicare_login(request):
             raise BBSLSxHealthCheckFailedException(settings.MEDICARE_ERROR_MSG)
 
         relay_param_name = "relay"
+        redirect = urllib_request.pathname2url(redirect)
+        state = generate_nonce()
+        state = urllib_request.pathname2url(state)
+        request.session[relay_param_name] = state
+        mymedicare_login_url = "%s&%s=%s&redirect_uri=%s" % (
+            mymedicare_login_url, relay_param_name, state, redirect)
+        next_uri = request.GET.get('next', "")
     else:
         # TODO: Deprecate SLS related code when SLSx is deployed and functioning in all ENVs
+        # check next_uri if is v2 authorize, correct redirect here (do not use default)
         redirect = settings.MEDICARE_REDIRECT_URI
-        mymedicare_login_url = settings.MEDICARE_LOGIN_URI
-        relay_param_name = "state"
+        next_uri = request.GET.get('next', "")
+        if next_uri is not None and next_uri.startswith('/v2/o/authorize/'):
+            redirect = "{}{}".format(settings.MEDICARE_REDIRECT_URI, "-v2")
 
-    redirect = urllib_request.pathname2url(redirect)
-    state = generate_nonce()
-    state = urllib_request.pathname2url(state)
-    request.session[relay_param_name] = state
-    mymedicare_login_url = "%s&%s=%s&redirect_uri=%s" % (
-        mymedicare_login_url, relay_param_name, state, redirect)
-    next_uri = request.GET.get('next', "")
+        mymedicare_login_url = settings.MEDICARE_LOGIN_URI
+        redirect = urllib_request.pathname2url(redirect)
+        state = generate_nonce()
+        state = urllib_request.pathname2url(state)
+        request.session['state'] = state
+        mymedicare_login_url = "{}&state={}&redirect_uri={}".format(
+            mymedicare_login_url, state, redirect)
 
     AnonUserState.objects.create(state=state, next_uri=next_uri)
 

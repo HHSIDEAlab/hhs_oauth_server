@@ -24,7 +24,7 @@ services:
             - OAUTHLIB_INSECURE_TRANSPORT=true
             - DJANGO_DEFAULT_SAMPLE_FHIR_ID="-20140000008325"
             - DJANGO_SECURE_SESSION=False
-            - FHIR_URL="https://prod-sbx.bfd.cms.gov/v1/fhir/"
+            - FHIR_URL="https://prod-sbx.bfd.cms.gov"
             - DJANGO_FHIR_CERTSTORE=/code/docker-compose/certstore/
             - DJANGO_MEDICARE_LOGIN_URI=http://127.0.0.1:8080?scope=openid%20profile&client_id=bluebutton
             - DJANGO_MEDICARE_REDIRECT_URI=http://localhost:8000/mymedicare/sls-callback

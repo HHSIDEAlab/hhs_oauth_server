@@ -1,18 +1,27 @@
-from apps.fhir.bluebutton.exceptions import UpstreamServerException
-from apps.test import BaseApiTest
+from django.test import RequestFactory
+from django.test.client import Client
 from httmock import HTTMock, urlmatch
 from requests.exceptions import HTTPError
 from rest_framework import exceptions
+
+from apps.fhir.bluebutton.exceptions import UpstreamServerException
+from apps.test import BaseApiTest
 from ..authentication import match_fhir_id
 from .responses import responses
 
 
 class TestAuthentication(BaseApiTest):
-
     MOCK_FHIR_URL = "fhir.backend.bluebutton.hhsdevcloud.us"
     MOCK_FHIR_PATH = "/v1/fhir/Patient/"
     MOCK_FHIR_HICN_QUERY = ".*hicnHash.*"
     MOCK_FHIR_MBI_QUERY = ".*mbi-hash.*"
+
+    def setUp(self):
+        # Setup the RequestFactory
+        self.factory = RequestFactory()
+        self.client = Client()
+        self.request = self.factory.get('http://localhost:8000/mymedicare/sls-callback')
+        self.request.session = self.client.session
 
     @urlmatch(netloc=MOCK_FHIR_URL, path=MOCK_FHIR_PATH, query=MOCK_FHIR_HICN_QUERY)
     def fhir_match_hicn_success_mock(self, url, request):
@@ -71,7 +80,7 @@ class TestAuthentication(BaseApiTest):
         with HTTMock(self.fhir_match_hicn_success_mock, self.fhir_match_mbi_success_mock):
             fhir_id, hash_lookup_type = match_fhir_id(
                 mbi_hash=self.test_mbi_hash,
-                hicn_hash=self.test_hicn_hash)
+                hicn_hash=self.test_hicn_hash, request=self.request)
             self.assertEqual(fhir_id, "-20000000002346")
             self.assertEqual(hash_lookup_type, "M")
 
@@ -84,7 +93,7 @@ class TestAuthentication(BaseApiTest):
         with HTTMock(self.fhir_match_hicn_success_mock, self.fhir_match_mbi_not_found_mock):
             fhir_id, hash_lookup_type = match_fhir_id(
                 mbi_hash=self.test_mbi_hash,
-                hicn_hash=self.test_hicn_hash)
+                hicn_hash=self.test_hicn_hash, request=self.request)
             self.assertEqual(fhir_id, "-20000000002346")
             self.assertEqual(hash_lookup_type, "H")
 
@@ -97,7 +106,7 @@ class TestAuthentication(BaseApiTest):
         with HTTMock(self.fhir_match_hicn_not_found_mock, self.fhir_match_mbi_success_mock):
             fhir_id, hash_lookup_type = match_fhir_id(
                 mbi_hash=self.test_mbi_hash,
-                hicn_hash=self.test_hicn_hash)
+                hicn_hash=self.test_hicn_hash, request=self.request)
             self.assertEqual(fhir_id, "-20000000002346")
             self.assertEqual(hash_lookup_type, "M")
 
@@ -111,7 +120,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaises(exceptions.NotFound):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_server_hicn_error(self):
         '''
@@ -123,7 +132,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaises(HTTPError):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_server_mbi_error(self):
         '''
@@ -135,7 +144,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaises(HTTPError):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_duplicates_hicn(self):
         '''
@@ -147,7 +156,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaisesRegexp(UpstreamServerException, "^Duplicate.*"):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_duplicates_mbi(self):
         '''
@@ -159,7 +168,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaisesRegexp(UpstreamServerException, "^Duplicate.*"):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_duplicates_both(self):
         '''
@@ -171,7 +180,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaisesRegexp(UpstreamServerException, "^Duplicate.*"):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_malformed_hicn(self):
         '''
@@ -183,7 +192,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaisesRegexp(UpstreamServerException, "^Unexpected result found*"):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_malformed_mbi(self):
         '''
@@ -195,7 +204,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaisesRegexp(UpstreamServerException, "^Unexpected result found*"):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_lying_hicn(self):
         '''
@@ -209,7 +218,7 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaisesRegexp(UpstreamServerException, "^Duplicate.*"):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)
 
     def test_match_fhir_id_lying_mbi(self):
         '''
@@ -223,4 +232,4 @@ class TestAuthentication(BaseApiTest):
             with self.assertRaisesRegexp(UpstreamServerException, "^Duplicate.*"):
                 fhir_id, hash_lookup_type = match_fhir_id(
                     mbi_hash=self.test_mbi_hash,
-                    hicn_hash=self.test_hicn_hash)
+                    hicn_hash=self.test_hicn_hash, request=self.request)

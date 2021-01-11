@@ -45,17 +45,18 @@ def create_user(group):
     u.groups.add(group)
     c, g_o_c = Crosswalk.objects.get_or_create(user=u,
                                                _fhir_id=settings.DEFAULT_SAMPLE_FHIR_ID,
-                                               _user_id_hash="139e178537ed3bc486e6a7195a47a82a2cd6f46e911660fe9775f6e0dd3f1130")
+                                               _user_id_hash="ee78989d1d9ba0b98f3cfbd52479f10c7631679c17563186f70fbef038cc9536")
     return u
 
 
 def create_application(user, group):
     Application.objects.filter(name="TestApp").delete()
-    redirect_uri = "%s/testclient/callback" % (settings.HOSTNAME_URL)
+    redirect_uri = "{}{}".format(settings.HOSTNAME_URL, settings.TESTCLIENT_REDIRECT_URI)
+    redirect_uri_v2 = "{}{}".format(settings.HOSTNAME_URL, settings.TESTCLIENT_REDIRECT_URI_V2)
     if not(redirect_uri.startswith("http://") or redirect_uri.startswith("https://")):
         redirect_uri = "https://" + redirect_uri
     a = Application.objects.create(name="TestApp",
-                                   redirect_uris=redirect_uri,
+                                   redirect_uris="{}{}{}".format(redirect_uri, "\n", redirect_uri_v2),
                                    user=user,
                                    client_type="confidential",
                                    authorization_grant_type="authorization-code")

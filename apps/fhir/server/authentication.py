@@ -66,8 +66,9 @@ def search_fhir_id_by_identifier(search_identifier, request=None):
         auth_flow_dict = None
 
     # Build URL with patient ID search by identifier.
+    ver = 'v2' if request.path.endswith('sls-callback-v2') else 'v1'
     url = get_resourcerouter().fhir_url \
-        + "Patient/?identifier=" + search_identifier \
+        + "/{}/fhir/Patient/?identifier=".format(ver) + search_identifier \
         + "&_format=" + settings.FHIR_PARAM_FORMAT
 
     s = requests.Session()
