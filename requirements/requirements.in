@@ -1,5 +1,5 @@
 # base packages
-django==2.2.13
+django==2.2.17
 django-getenv
 django-bootstrap-form
 django-cors-headers
@@ -22,7 +22,7 @@ configparser
 dj-database-url
 pyjwt
 newrelic
-psycopg2
+psycopg2-binary
 sqlparse
 Pillow==7.1.0
 boto3
