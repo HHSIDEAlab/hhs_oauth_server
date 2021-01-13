@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
-router.register(r'tokens', views.AuthorizedGrants, base_name='token')
+router.register(r'tokens', views.AuthorizedGrants, basename='token')
 
 urlpatterns = [
     url(r'', include((router.urls, 'authorization'), namespace='token_management')),

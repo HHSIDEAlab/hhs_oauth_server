@@ -188,7 +188,7 @@ class BackendConnectionTest(BaseApiTest):
             'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
                     "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
             'headers': {
-                'User-Agent': 'python-requests/2.20.0',
+                'User-Agent': 'python-requests/2.25.1',
                 'Accept-Encoding': 'gzip, deflate',
                 'Accept': '*/*',
                 'Connection': 'keep-alive',
@@ -248,7 +248,7 @@ class BackendConnectionTest(BaseApiTest):
             'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
                     "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
             'headers': {
-                'User-Agent': 'python-requests/2.20.0',
+                'User-Agent': 'python-requests/2.25.1',
                 'Accept-Encoding': 'gzip, deflate',
                 'Accept': '*/*',
                 'Connection': 'keep-alive',
@@ -323,7 +323,7 @@ class BackendConnectionTest(BaseApiTest):
             'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
                     "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
             'headers': {
-                'User-Agent': 'python-requests/2.20.0',
+                'User-Agent': 'python-requests/2.25.1',
                 'Accept-Encoding': 'gzip, deflate',
                 'Accept': '*/*',
                 'Connection': 'keep-alive',
@@ -366,7 +366,7 @@ class BackendConnectionTest(BaseApiTest):
             'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
                     "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
             'headers': {
-                'User-Agent': 'python-requests/2.20.0',
+                'User-Agent': 'python-requests/2.25.1',
                 'Accept-Encoding': 'gzip, deflate',
                 'Accept': '*/*',
                 'Connection': 'keep-alive',
@@ -539,7 +539,7 @@ class BackendConnectionTest(BaseApiTest):
             'method': 'GET',
             'url': 'https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/-20140000008325/?_format=json',
             'headers': {
-                'User-Agent': 'python-requests/2.20.0',
+                'User-Agent': 'python-requests/2.25.1',
                 'Accept-Encoding': 'gzip, deflate',
                 'Accept': '*/*',
                 'Connection': 'keep-alive',
