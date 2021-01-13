@@ -3,7 +3,7 @@
 coverage
 python-coveralls
 tox
-flake8
+flake8==3.8.4
 django-debug-toolbar
 httmock
 ptvsd
