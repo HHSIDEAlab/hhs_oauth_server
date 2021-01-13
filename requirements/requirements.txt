@@ -86,7 +86,7 @@ django-waffle==0.20.0 \
 django==2.2.17 \
     --hash=sha256:558cb27930defd9a6042133258caf797b2d1dee233959f537e3dc475cb49bd7c \
     --hash=sha256:cf5370a4d7765a9dd6d42a7b96b53c74f9446cd38209211304b210fe0404b861 \
-    # via -r requirements/requirements.in, django-bootstrap-form, django-filter, django-localflavor, django-oauth-toolkit, django-settings-export, django-storages
+    # via -r requirements/requirements.in, django-bootstrap-form, django-filter, django-localflavor, django-oauth-toolkit, django-settings-export, django-storages, djangorestframework
 djangorestframework-csv==2.1.0 \
     --hash=sha256:2f008b20a44f2d3c37835ea5b5ddfe19f54394f07b9cb267c616a917a7f7e27c \
     # via -r requirements/requirements.in
@@ -94,9 +94,9 @@ djangorestframework-yaml==1.0.3 \
     --hash=sha256:58e44b2ba2b1484fe793adcdc5d04910ab9b385a2991603b049b96eed6a76d32 \
     --hash=sha256:b2277cb0459cf14b473e8cb6e0055725582afe862049c32b840b261ca8fbce3e \
     # via -r requirements/requirements.in
-djangorestframework==3.9.1 \
-    --hash=sha256:79c6efbb2514bc50cf25906d7c0a5cfead714c7af667ff4bd110312cd380ae66 \
-    --hash=sha256:a4138613b67e3a223be6c97f53b13d759c5b90d2b433bad670b8ebf95402075f \
+djangorestframework==3.12.0 \
+    --hash=sha256:7fb1c91a8f9aa5ccb39d1568925a6433659dacfc1af7ac757b293d6451ddb9e1 \
+    --hash=sha256:9d5b07a2dd29b4fb18da2e6a888051f34b286b3bfc1c3fe885a17e16e389c569 \
     # via -r requirements/requirements.in, djangorestframework-csv
 docutils==0.14 \
     --hash=sha256:02aec4bd92ab067f6ff27a38a38a41173bf01bed8f89157768c1573f53e474a6 \
@@ -225,9 +225,9 @@ requests-oauthlib==1.0.0 \
     --hash=sha256:8886bfec5ad7afb391ed5443b1f697c6f4ae98d0e5620839d8b4499c032ada3f \
     --hash=sha256:e21232e2465808c0e892e0e4dbb8c2faafec16ac6dc067dd546e9b466f3deac8 \
     # via -r requirements/requirements.in
-requests==2.20.0 \
-    --hash=sha256:99dcfdaaeb17caf6e526f32b6a7b780461512ab3f1d992187801694cba42770c \
-    --hash=sha256:a84b8c9ab6239b578f22d1c21d51b696dcfe004032bb80ea832398d6909d7279 \
+requests==2.25.1 \
+    --hash=sha256:27973dd4a904a4f13b263a19c866c13b92a39ed1c964655f025f3f8d3d75b804 \
+    --hash=sha256:c210084e36a42ae6b9219e00e48287def368a26d03a048ddad7bfee44f75871e \
     # via -r requirements/requirements.in, django-oauth-toolkit, requests-oauthlib
 s3transfer==0.1.13 \
     --hash=sha256:90dc18e028989c609146e241ea153250be451e05ecc0c2832565231dacdf59c1 \

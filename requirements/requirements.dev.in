@@ -2,7 +2,7 @@
 # test and development
 coverage
 python-coveralls
-tox
+tox==3.21.0
 flake8==3.8.4
 django-debug-toolbar
 httmock
