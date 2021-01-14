@@ -303,7 +303,7 @@ def mymedicare_login(request):
         redirect = settings.MEDICARE_REDIRECT_URI
         next_uri = request.GET.get('next', "")
         if next_uri is not None and next_uri.startswith('/v2/o/authorize/'):
-            redirect = "{}{}".format(settings.MEDICARE_REDIRECT_URI, "-v2")
+            redirect = settings.MEDICARE_REDIRECT_URI_V2
 
         mymedicare_login_url = settings.MEDICARE_LOGIN_URI
         redirect = urllib_request.pathname2url(redirect)

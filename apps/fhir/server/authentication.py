@@ -75,9 +75,9 @@ def search_fhir_id_by_identifier(search_identifier, request=None):
 
     req = requests.Request('GET', url, headers=headers)
     prepped = req.prepare()
-    pre_fetch.send_robust(FhirServerAuth, request=req, auth_flow_dict=auth_flow_dict)
+    pre_fetch.send_robust(FhirServerAuth, request=req, api_ver=ver, auth_flow_dict=auth_flow_dict)
     response = s.send(prepped, cert=certs, verify=False)
-    post_fetch.send_robust(FhirServerAuth, request=req, response=response, auth_flow_dict=auth_flow_dict)
+    post_fetch.send_robust(FhirServerAuth, request=req, response=response, api_ver=ver, auth_flow_dict=auth_flow_dict)
     response.raise_for_status()
     backend_data = response.json()
 

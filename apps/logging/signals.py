@@ -99,15 +99,18 @@ def log_grant_removed(sender, instance=None, **kwargs):
 
 @receiver(pre_fetch, sender=FhirDataView)
 @receiver(pre_fetch, sender=FhirServerAuth)
-def fetching_data(sender, request=None, auth_flow_dict=None, **kwargs):
-    fhir_logger.info(get_event(FHIRRequest(request) if sender == FhirDataView else FHIRRequestForAuth(request, auth_flow_dict)))
+def fetching_data(sender, request=None, auth_flow_dict=None, api_ver=None, **kwargs):
+    fhir_logger.info(get_event(FHIRRequest(request, api_ver)
+                               if sender == FhirDataView
+                               else FHIRRequestForAuth(request, auth_flow_dict, api_ver)))
 
 
 @receiver(post_fetch, sender=FhirDataView)
 @receiver(post_fetch, sender=FhirServerAuth)
-def fetched_data(sender, request=None, response=None, auth_flow_dict=None, **kwargs):
-    fhir_logger.info(get_event(FHIRResponse(response) if sender == FhirDataView else FHIRResponseForAuth(response,
-                                                                                                         auth_flow_dict)))
+def fetched_data(sender, request=None, response=None, auth_flow_dict=None, api_ver=None, **kwargs):
+    fhir_logger.info(get_event(FHIRResponse(response, api_ver)
+                     if sender == FhirDataView
+                     else FHIRResponseForAuth(response, auth_flow_dict, api_ver)))
 
 
 def sls_hook(sender, response=None, auth_flow_dict=None, **kwargs):

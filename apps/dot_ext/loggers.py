@@ -19,7 +19,7 @@ from .models import AuthFlowUuid
 # List of value keys that are being tracked via request.session
 SESSION_AUTH_FLOW_TRACE_KEYS = ['auth_uuid', 'auth_client_id', 'auth_grant_type', 'auth_app_id',
                                 'auth_app_name', 'auth_pkce_method', 'auth_crosswalk_action',
-                                'auth_share_demographic_scopes', 'auth_require_demographic_scopes', 'auth_request_path']
+                                'auth_share_demographic_scopes', 'auth_require_demographic_scopes']
 
 # REGEX of paths that should be updated with auth flow info in hhs_oauth_server.request_logging.py
 AUTH_FLOW_REQUEST_LOGGING_PATHS_REGEX = ("(^/[v1|v2]/o/authorize/.*"

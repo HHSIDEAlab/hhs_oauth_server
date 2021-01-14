@@ -133,7 +133,7 @@ class ApplicationLabel(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(db_index=True, unique=True)
     description = models.TextField()
-    applications = models.ManyToManyField(Application, null=True, blank=True)
+    applications = models.ManyToManyField(Application, blank=True)
 
     @property
     def short_description(self):

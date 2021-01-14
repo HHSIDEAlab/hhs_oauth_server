@@ -1,21 +1,61 @@
-from unittest.mock import patch
 import json
-from httmock import all_requests, HTTMock, urlmatch
-from apps.mymedicare_cb.tests.responses import patient_response
 import apps.fhir.bluebutton.utils
 import apps.fhir.bluebutton.views.home
-from apps.fhir.bluebutton.views.home import (conformance_filter)
-from django.test import TestCase, RequestFactory
-from apps.test import BaseApiTest
-from django.conf import settings
-from django.test.client import Client
-from oauth2_provider.models import get_access_token_model
-from django.urls import reverse
 
+from django.conf import settings
+from django.test import TestCase, RequestFactory
+from django.test.client import Client
+from django.urls import reverse
+from httmock import all_requests, HTTMock, urlmatch
+from oauth2_provider.models import get_access_token_model
+from unittest.mock import patch
+from waffle.testutils import override_switch, override_flag
+
+from apps.test import BaseApiTest
+from apps.mymedicare_cb.tests.responses import patient_response
+from apps.fhir.bluebutton.views.home import (conformance_filter)
 # Get the pre-defined Conformance statement
 from .data_conformance import CONFORMANCE
 
 AccessToken = get_access_token_model()
+
+
+def get_expected_read_request(ver):
+    return {'method': 'GET',
+            'url': 'https://fhir.backend.bluebutton.hhsdevcloud.us/{}/fhir/Patient/-20140000008325/?_format=json'.format(ver),
+            'headers': {
+                'User-Agent': 'python-requests/2.20.0',
+                'Accept-Encoding': 'gzip, deflate',
+                'Accept': '*/*',
+                'Connection': 'keep-alive',
+                'BlueButton-OriginalQueryCounter': '1',
+                'BlueButton-BeneficiaryId': 'patientId:-20140000008325',
+                'BlueButton-Application': 'John_Smith_test',
+                'X-Forwarded-For': '127.0.0.1',
+                'keep-alive': 'timeout=120, max=10',
+                'BlueButton-OriginalUrl': '/{}/fhir/Patient/-20140000008325'.format(ver),
+                'BlueButton-BackendCall': ('https://fhir.backend.bluebutton.hhsdevcloud.us'
+                                           '/{}/fhir/Patient/-20140000008325/').format(ver), }
+            }
+
+
+def get_expected_request(ver):
+    return {'method': 'GET',
+            'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
+                    "{}/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325".format(ver)),
+            'headers': {
+                'User-Agent': 'python-requests/2.20.0',
+                'Accept-Encoding': 'gzip, deflate',
+                'Accept': '*/*',
+                'Connection': 'keep-alive',
+                'BlueButton-OriginalQueryCounter': '1',
+                'BlueButton-BeneficiaryId': 'patientId:-20140000008325',
+                'BlueButton-Application': 'John_Smith_test',
+                'X-Forwarded-For': '127.0.0.1',
+                'keep-alive': 'timeout=120, max=10',
+                'BlueButton-OriginalUrl': '/{}/fhir/Patient'.format(ver),
+                'BlueButton-BackendCall': 'https://fhir.backend.bluebutton.hhsdevcloud.us/{}/fhir/Patient/'.format(ver), }
+            }
 
 
 class ConformanceReadRequestTest(TestCase):
@@ -82,8 +122,18 @@ class ThrottleReadRequestTest(BaseApiTest):
         self.client = Client()
 
     @patch('apps.dot_ext.throttling.TokenRateThrottle.get_rate')
-    def test_read_throttle(self,
-                           mock_rates):
+    def test_read_throttle(self, mock_rates):
+        self._read_throttle(mock_rates, False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    @patch('apps.dot_ext.throttling.TokenRateThrottle.get_rate')
+    def test_read_throttle_v2(self, mock_rates):
+        # throttle is v1 / v2 agnostic, but good to check
+        # with urls from reversing from v1 and v2 urls
+        self._read_throttle(mock_rates, True)
+
+    def _read_throttle(self, mock_rates, v2=False):
         mock_rates.return_value = '1/day'
         # create the user
         first_access_token = self.create_token('John', 'Smith')
@@ -98,9 +148,9 @@ class ThrottleReadRequestTest(BaseApiTest):
         with HTTMock(catchall):
 
             response = self.client.get(
-                reverse(
-                    'bb_oauth_fhir_patient_read_or_update_or_delete',
-                    kwargs={'resource_id': -20140000008325}),
+                reverse('bb_oauth_fhir_patient_read_or_update_or_delete'
+                        if not v2 else 'bb_oauth_fhir_patient_read_or_update_or_delete_v2',
+                        kwargs={'resource_id': -20140000008325}),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 200)
@@ -117,7 +167,8 @@ class ThrottleReadRequestTest(BaseApiTest):
 
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_patient_read_or_update_or_delete',
+                    'bb_oauth_fhir_patient_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_patient_read_or_update_or_delete_v2',
                     kwargs={'resource_id': -20140000008325}),
                 Authorization="Bearer %s" % (first_access_token))
 
@@ -139,7 +190,7 @@ class ThrottleReadRequestTest(BaseApiTest):
             # Assert that the search endpoint is also ratelimited
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_patient_search'),
+                    'bb_oauth_fhir_patient_search' if not v2 else 'bb_oauth_fhir_patient_search_v2'),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 429)
@@ -150,7 +201,8 @@ class ThrottleReadRequestTest(BaseApiTest):
 
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_patient_read_or_update_or_delete',
+                    'bb_oauth_fhir_patient_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_patient_read_or_update_or_delete_v2',
                     kwargs={'resource_id': -20140000008325}),
                 Authorization="Bearer %s" % (second_access_token))
 
@@ -180,31 +232,22 @@ class BackendConnectionTest(BaseApiTest):
         self.client = Client()
 
     def test_search_request(self):
+        self._search_request(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_search_request_v2(self):
+        self._search_request(True)
+
+    def _search_request(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
-
-        expected_request = {
-            'method': 'GET',
-            'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
-                    "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
-            'headers': {
-                'User-Agent': 'python-requests/2.20.0',
-                'Accept-Encoding': 'gzip, deflate',
-                'Accept': '*/*',
-                'Connection': 'keep-alive',
-                'BlueButton-OriginalQueryCounter': '1',
-                'BlueButton-BeneficiaryId': 'patientId:-20140000008325',
-                'BlueButton-Application': 'John_Smith_test',
-                'X-Forwarded-For': '127.0.0.1',
-                'keep-alive': 'timeout=120, max=10',
-                'BlueButton-OriginalUrl': '/v1/fhir/Patient',
-                'BlueButton-BackendCall': 'https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/',
-            }
-        }
+        ver = 'v1' if not v2 else 'v2'
+        expected_request = get_expected_request(ver)
 
         @all_requests
         def catchall(url, req):
-            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/", req.url)
+            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/{}/fhir/Patient/".format(ver), req.url)
             self.assertIn("_format=application%2Fjson%2Bfhir", req.url)
             self.assertIn("_id=-20140000008325", req.url)
             self.assertIn("startIndex=0", req.url)
@@ -222,7 +265,7 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_patient_search'),
+                    'bb_oauth_fhir_patient_search' if not v2 else 'bb_oauth_fhir_patient_search_v2'),
                 {'count': 5, 'hello': 'world'},
                 Authorization="Bearer %s" % (first_access_token))
 
@@ -233,38 +276,37 @@ class BackendConnectionTest(BaseApiTest):
             self.assertIn("_count=5", response.json()['link'][0]['url'])
 
     def test_search_request_unauthorized(self):
+        self._search_request_unauthorized(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_search_request_unauthorized_v2(self):
+        self._search_request_unauthorized(True)
+
+    def _search_request_unauthorized(self, v2=False):
         response = self.client.get(
-            reverse('bb_oauth_fhir_patient_search'),
+            reverse('bb_oauth_fhir_patient_search' if not v2 else 'bb_oauth_fhir_patient_search_v2'),
             Authorization="Bearer bogus")
 
         self.assertEqual(response.status_code, 401)
 
     def test_search_request_not_found(self):
+        self._search_request_not_found(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_search_request_not_found_v2(self):
+        self._search_request_not_found(True)
+
+    def _search_request_not_found(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
-
-        expected_request = {
-            'method': 'GET',
-            'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
-                    "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
-            'headers': {
-                'User-Agent': 'python-requests/2.20.0',
-                'Accept-Encoding': 'gzip, deflate',
-                'Accept': '*/*',
-                'Connection': 'keep-alive',
-                'BlueButton-OriginalQueryCounter': '1',
-                'BlueButton-BeneficiaryId': 'patientId:-20140000008325',
-                'BlueButton-Application': 'John_Smith_test',
-                'X-Forwarded-For': '127.0.0.1',
-                'keep-alive': 'timeout=120, max=10',
-                'BlueButton-OriginalUrl': '/v1/fhir/Patient',
-                'BlueButton-BackendCall': 'https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/',
-            }
-        }
+        ver = 'v1' if not v2 else 'v2'
+        expected_request = get_expected_request(ver)
 
         @all_requests
         def catchall(url, req):
-            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/", req.url)
+            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/{}/fhir/Patient/".format(ver), req.url)
             self.assertIn("_format=application%2Fjson%2Bfhir", req.url)
             self.assertIn("_id=-20140000008325", req.url)
             self.assertEqual(expected_request['method'], req.method)
@@ -277,14 +319,23 @@ class BackendConnectionTest(BaseApiTest):
 
         with HTTMock(catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_patient_search'),
+                reverse('bb_oauth_fhir_patient_search' if not v2 else 'bb_oauth_fhir_patient_search_v2'),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 404)
 
     def test_search_emptyset(self):
+        self._search_emptyset(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_search_emptyset_v2(self):
+        self._search_emptyset(True)
+
+    def _search_emptyset(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
+        ver = 'v1' if not v2 else 'v2'
 
         @all_requests
         def catchall(url, req):
@@ -301,7 +352,7 @@ class BackendConnectionTest(BaseApiTest):
                     "link": [
                         {
                             "relation": "self",
-                            "url": "http://hapi.fhir.org/v1/fhir/ExplanationOfBenefit?_pretty=true&patient=1234"
+                            "url": "http://hapi.fhir.org/{}/fhir/ExplanationOfBenefit?_pretty=true&patient=1234".format(ver)
                         },
                     ],
                 },
@@ -309,37 +360,28 @@ class BackendConnectionTest(BaseApiTest):
 
         with HTTMock(catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_eob_search'),
+                reverse('bb_oauth_fhir_eob_search' if not v2 else 'bb_oauth_fhir_eob_search_v2'),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 200)
 
     def test_search_request_failed(self):
+        self._search_request_failed(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_search_request_failed_v2(self):
+        self._search_request_failed(True)
+
+    def _search_request_failed(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
-
-        expected_request = {
-            'method': 'GET',
-            'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
-                    "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
-            'headers': {
-                'User-Agent': 'python-requests/2.20.0',
-                'Accept-Encoding': 'gzip, deflate',
-                'Accept': '*/*',
-                'Connection': 'keep-alive',
-                'BlueButton-OriginalQueryCounter': '1',
-                'BlueButton-BeneficiaryId': 'patientId:-20140000008325',
-                'BlueButton-Application': 'John_Smith_test',
-                'X-Forwarded-For': '127.0.0.1',
-                'keep-alive': 'timeout=120, max=10',
-                'BlueButton-OriginalUrl': '/v1/fhir/Patient',
-                'BlueButton-BackendCall': 'https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/',
-            }
-        }
+        ver = 'v1' if not v2 else 'v2'
+        expected_request = get_expected_request(ver)
 
         @all_requests
         def catchall(url, req):
-            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/", req.url)
+            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/{}/fhir/Patient/".format(ver), req.url)
             self.assertIn("_format=application%2Fjson%2Bfhir", req.url)
             self.assertIn("_id=-20140000008325", req.url)
             self.assertEqual(expected_request['method'], req.method)
@@ -352,33 +394,24 @@ class BackendConnectionTest(BaseApiTest):
 
         with HTTMock(catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_patient_search'),
+                reverse('bb_oauth_fhir_patient_search' if not v2 else 'bb_oauth_fhir_patient_search_v2'),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 502)
 
     def test_search_request_failed_no_fhir_id_match(self):
+        self._search_request_failed_no_fhir_id_match(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_search_request_failed_no_fhir_id_match_v2(self):
+        self._search_request_failed_no_fhir_id_match(True)
+
+    def _search_request_failed_no_fhir_id_match(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
-
-        expected_request = {
-            'method': 'GET',
-            'url': ("https://fhir.backend.bluebutton.hhsdevcloud.us/"
-                    "v1/fhir/Patient/?_format=application%2Fjson%2Bfhir&_id=-20140000008325"),
-            'headers': {
-                'User-Agent': 'python-requests/2.20.0',
-                'Accept-Encoding': 'gzip, deflate',
-                'Accept': '*/*',
-                'Connection': 'keep-alive',
-                'BlueButton-OriginalQueryCounter': '1',
-                'BlueButton-BeneficiaryId': 'patientId:-20140000008325',
-                'BlueButton-Application': 'John_Smith_test',
-                'X-Forwarded-For': '127.0.0.1',
-                'keep-alive': 'timeout=120, max=10',
-                'BlueButton-OriginalUrl': '/v1/fhir/Patient',
-                'BlueButton-BackendCall': 'https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/',
-            }
-        }
+        ver = 'v1' if not v2 else 'v2'
+        expected_request = get_expected_request(ver)
 
         @urlmatch(query=r'.*identifier=http%3A%2F%2Fbluebutton.cms.hhs.gov%2Fidentifier%23hicnHash%7C139e178537ed3bc486e6a7195a47a82a2cd6f46e911660fe9775f6e0dd3f1130.*')  # noqa
         def fhir_request(url, req):
@@ -396,7 +429,7 @@ class BackendConnectionTest(BaseApiTest):
 
         @all_requests
         def catchall(url, req):
-            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/", req.url)
+            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/{}/fhir/Patient/".format(ver), req.url)
             self.assertIn("_format=application%2Fjson%2Bfhir", req.url)
             self.assertIn("_id=-20140000008325", req.url)
             self.assertEqual(expected_request['method'], req.method)
@@ -409,18 +442,27 @@ class BackendConnectionTest(BaseApiTest):
 
         with HTTMock(fhir_request, catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_patient_search'),
+                reverse('bb_oauth_fhir_patient_search' if not v2 else 'bb_oauth_fhir_patient_search_v2'),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 502)
 
     def test_search_parameters_request(self):
+        self._search_parameters_request(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_search_parameters_request_v2(self):
+        self._search_parameters_request(True)
+
+    def _search_parameters_request(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
+        ver = 'v1' if not v2 else 'v2'
 
         @all_requests
         def catchall(url, req):
-            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/ExplanationOfBenefit/", req.url)
+            self.assertIn("https://fhir.backend.bluebutton.hhsdevcloud.us/{}/fhir/ExplanationOfBenefit/".format(ver), req.url)
             self.assertIn("_format=application%2Fjson%2Bfhir", req.url)
 
             return {
@@ -436,7 +478,7 @@ class BackendConnectionTest(BaseApiTest):
         # Test _lastUpdated with valid parameter starting with "lt"
         with HTTMock(catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_eob_search'),
+                reverse('bb_oauth_fhir_eob_search' if not v2 else 'bb_oauth_fhir_eob_search_v2'),
                 {'_lastUpdated': 'lt2019-11-22T14:00:00-05:00'},
                 Authorization="Bearer %s" % (first_access_token))
             self.assertEqual(response.status_code, 200)
@@ -444,7 +486,7 @@ class BackendConnectionTest(BaseApiTest):
         # Test _lastUpdated with invalid parameter starting with "zz"
         with HTTMock(catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_eob_search'),
+                reverse('bb_oauth_fhir_eob_search' if not v2 else 'bb_oauth_fhir_eob_search_v2'),
                 {'_lastUpdated': 'zz2020-11-22T14:00:00-05:00'},
                 Authorization="Bearer %s" % (first_access_token))
 
@@ -456,7 +498,7 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_eob_search'),
+                    'bb_oauth_fhir_eob_search' if not v2 else 'bb_oauth_fhir_eob_search_v2'),
                 {'type': 'pde'},
                 Authorization="Bearer %s" % (first_access_token))
             self.assertEqual(response.status_code, 200)
@@ -464,7 +506,7 @@ class BackendConnectionTest(BaseApiTest):
         # Test type= with multiple (all valid values)
         with HTTMock(catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_eob_search'),
+                reverse('bb_oauth_fhir_eob_search' if not v2 else 'bb_oauth_fhir_eob_search_v2'),
                 {'type': 'carrier,'
                          'pde,'
                          'dme,'
@@ -487,7 +529,7 @@ class BackendConnectionTest(BaseApiTest):
         # Test type= with an invalid type
         with HTTMock(catchall):
             response = self.client.get(
-                reverse('bb_oauth_fhir_eob_search'),
+                reverse('bb_oauth_fhir_eob_search' if not v2 else 'bb_oauth_fhir_eob_search_v2'),
                 {'type': 'carrier,'
                          'INVALID-TYPE,'
                          'dme,'},
@@ -498,6 +540,14 @@ class BackendConnectionTest(BaseApiTest):
             self.assertEqual(response.status_code, 400)
 
     def test_read_request_failed_no_fhir_id(self):
+        self._read_request_failed_no_fhir_id(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_read_request_failed_no_fhir_id_v2(self):
+        self._read_request_failed_no_fhir_id(True)
+
+    def _read_request_failed_no_fhir_id(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
 
@@ -525,33 +575,26 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(fhir_request, catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_patient_read_or_update_or_delete',
+                    'bb_oauth_fhir_patient_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_patient_read_or_update_or_delete_v2',
                     kwargs={'resource_id': '-20140000008325'}),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 403)
 
     def test_read_request(self):
+        self._read_request(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_read_request_v2(self):
+        self._read_request(True)
+
+    def _read_request(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
-
-        expected_request = {
-            'method': 'GET',
-            'url': 'https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/-20140000008325/?_format=json',
-            'headers': {
-                'User-Agent': 'python-requests/2.20.0',
-                'Accept-Encoding': 'gzip, deflate',
-                'Accept': '*/*',
-                'Connection': 'keep-alive',
-                'BlueButton-OriginalQueryCounter': '1',
-                'BlueButton-BeneficiaryId': 'patientId:-20140000008325',
-                'BlueButton-Application': 'John_Smith_test',
-                'X-Forwarded-For': '127.0.0.1',
-                'keep-alive': 'timeout=120, max=10',
-                'BlueButton-OriginalUrl': '/v1/fhir/Patient/-20140000008325',
-                'BlueButton-BackendCall': 'https://fhir.backend.bluebutton.hhsdevcloud.us/v1/fhir/Patient/-20140000008325/',
-            }
-        }
+        ver = 'v1' if not v2 else 'v2'
+        expected_request = get_expected_read_request(ver)
 
         @all_requests
         def catchall(url, req):
@@ -567,7 +610,8 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_patient_read_or_update_or_delete',
+                    'bb_oauth_fhir_patient_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_patient_read_or_update_or_delete_v2',
                     kwargs={'resource_id': '-20140000008325'}),
                 {'hello': 'world'},
                 Authorization="Bearer %s" % (first_access_token))
@@ -575,6 +619,14 @@ class BackendConnectionTest(BaseApiTest):
             self.assertEqual(response.status_code, 200)
 
     def test_read_eob_request(self):
+        self._read_eob_request(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_read_eob_request_v2(self):
+        self._read_eob_request(True)
+
+    def _read_eob_request(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
 
@@ -593,13 +645,22 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_eob_read_or_update_or_delete',
+                    'bb_oauth_fhir_eob_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_eob_read_or_update_or_delete_v2',
                     kwargs={'resource_id': 'eob_id'}),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 200)
 
     def test_read_coverage_request(self):
+        self._read_coverage_request(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_read_coverage_request_v2(self):
+        self._read_coverage_request(True)
+
+    def _read_coverage_request(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
 
@@ -618,13 +679,22 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_coverage_read_or_update_or_delete',
+                    'bb_oauth_fhir_coverage_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_coverage_read_or_update_or_delete_v2',
                     kwargs={'resource_id': 'coverage_id'}),
                 Authorization="Bearer %s" % (first_access_token))
 
             self.assertEqual(response.status_code, 200)
 
     def test_application_first_last_active(self):
+        self._application_first_last_active(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_application_first_last_active_v2(self):
+        self._application_first_last_active(True)
+
+    def _application_first_last_active(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
 
@@ -650,7 +720,8 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_coverage_read_or_update_or_delete',
+                    'bb_oauth_fhir_coverage_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_coverage_read_or_update_or_delete_v2',
                     kwargs={'resource_id': 'coverage_id'}),
                 Authorization="Bearer %s" % (first_access_token))
 
@@ -682,7 +753,8 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_coverage_read_or_update_or_delete',
+                    'bb_oauth_fhir_coverage_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_coverage_read_or_update_or_delete_v2',
                     kwargs={'resource_id': 'coverage_id'}),
                 Authorization="Bearer %s" % (first_access_token))
 
@@ -697,6 +769,14 @@ class BackendConnectionTest(BaseApiTest):
         self.assertNotEqual(application.last_active, prev_last_active)
 
     def test_permission_deny_fhir_request_on_disabled_app_org(self):
+        self._permission_deny_fhir_request_on_disabled_app_org(False)
+
+    @override_switch('bfd_v2', active=True)
+    @override_flag('bfd_v2_flag', active=True)
+    def test_permission_deny_fhir_request_on_disabled_app_org_v2(self):
+        self._permission_deny_fhir_request_on_disabled_app_org(True)
+
+    def _permission_deny_fhir_request_on_disabled_app_org(self, v2=False):
         # create the user
         first_access_token = self.create_token('John', 'Smith')
 
@@ -725,7 +805,8 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_coverage_read_or_update_or_delete',
+                    'bb_oauth_fhir_coverage_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_coverage_read_or_update_or_delete_v2',
                     kwargs={'resource_id': 'coverage_id'}),
                 Authorization="Bearer %s" % (first_access_token))
             self.assertEqual(response.status_code, 403)
@@ -752,7 +833,8 @@ class BackendConnectionTest(BaseApiTest):
         with HTTMock(catchall):
             response = self.client.get(
                 reverse(
-                    'bb_oauth_fhir_coverage_read_or_update_or_delete',
+                    'bb_oauth_fhir_coverage_read_or_update_or_delete'
+                    if not v2 else 'bb_oauth_fhir_coverage_read_or_update_or_delete_v2',
                     kwargs={'resource_id': 'coverage_id'}),
                 Authorization="Bearer %s" % (first_access_token))
             self.assertEqual(response.status_code, 403)
