@@ -155,6 +155,10 @@ function usage() {
 }
 
 # main logic
+
+## uncomment to tracing and trouble shooting this script 
+## set -x
+
 if [ "$#" -gt 1 ]
 then
     echo "Invalid command, too many arguments."

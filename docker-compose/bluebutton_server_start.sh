@@ -1,5 +1,8 @@
 #!/bin/sh
 
+## uncomment to tracing and trouble shooting this script 
+## set -x
+
 echo "SUPERUSER_NAME = " ${SUPERUSER_NAME}
 echo "SUPERUSER_EMAIL = " ${SUPERUSER_EMAIL}
 echo "SUPERUSER_PASSWORD = " ${SUPERUSER_PASSWORD}

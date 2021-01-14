@@ -73,12 +73,22 @@ HOSTNAME_URL="http://192.168.0.109:8000"
 
 ```
 
+## Sample beneficiaries (from BFD synthetic data)
+
+## sample beneficaries can be setup here for testing, the 1st values in below lists
+## map to DJANGO_DEFAULT_SAMPLE_FHIR_ID,DJANGO_DEFAULT_SAMPLE_MBI,DJANGO_DEFAULT_SAMPLE_HICN
+## respectively, and used to in creating sample user 'fred', the sample id's, mbi's. hicn's
+## will be populated on MSLS login form to assit dev testing.
+SAMPLE_FHIR_ID_LIST=-20140000008325,-20140000000001,-19990000000001
+SAMPLE_MBI_LIST=2SW4N00AA00,3S24J00AA00,1S00A00AA00
+SAMPLE_HICN_LIST=1000044680,1000067585,1000079035
+
 ## Blue Button DB image migrations
 
 DB image migrations is done in docker container before blue button server is started.
 this is done during execution of start_server.sh.
 
-the migration creates a super user with below attributes, can be customized in .env:
+the migration creates a super user (DEV type user) with below attributes, can be customized in .env:
 
 ```
 SUPERUSER_NAME=root
