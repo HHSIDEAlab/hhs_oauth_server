@@ -28,8 +28,8 @@ urlpatterns = [
     url(r'^v2/connect/userinfo', openidconnect_userinfo, name='openid_connect_userinfo'),
     url(r'^v2/fhir/metadata$', fhir_conformance, name='fhir_conformance_metadata'),
     url(r'^v2/fhir/', include('apps.fhir.bluebutton.v2.urls')),
-    url(r'^v2/o/', include('apps.dot_ext.urls')),
-    url(r'^v2/o/', include('apps.authorization.urls')),
+    url(r'^v2/o/', include('apps.dot_ext.v2.urls')),
+    url(r'^v2/o/', include('apps.authorization.v2.urls')),
     url(r'^v2/', include('apps.openapi.urls')),
 
     url(r'^' + ADMIN_REDIRECTOR + 'admin/metrics/', include('apps.metrics.urls')),

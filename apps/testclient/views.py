@@ -26,14 +26,13 @@ def callback(request):
     if not(host.startswith("http://") or host.startswith("https://")):
         host = "https://%s" % (host)
     auth_uri = host + request.get_full_path()
-    # make correction when it is for v2
-    # 'http://192.168.0.109:8000/v1/o/token/'
     token_uri = host + reverse('oauth2_provider:token')
     request.session['api_ver'] = 'v1'
     if request.path.endswith('callback-v2'):
-        token_uri = token_uri.replace('/v1/o/token/', '/v2/o/token/')
+        token_uri = host + reverse('oauth2_provider_v2:token-v2')
         request.session['api_ver'] = 'v2'
     try:
+        token_uri = host + reverse('oauth2_provider:token')
         token = oas.fetch_token(token_uri,
                                 client_secret=get_client_secret(),
                                 authorization_response=auth_uri)

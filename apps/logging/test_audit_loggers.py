@@ -419,8 +419,8 @@ class TestAuditEventLoggers(BaseApiTest):
             log_entries = hhs_oauth_server_log_content.splitlines()
             self.assertGreater(len(log_entries), 0)
             # hhs oauth server request logging
+            # quote out for v2 this fld:  "auth_crosswalk_action", come back later
             log_entry_dict = json.loads(log_entries[0])
-            # , "auth_crosswalk_action" comment out for now will debug later
             log_flds = ["start_time", "end_time", "request_uuid",
                         "path", "response_code", "size", "location",
                         "app_name", "app_id", "dev_id", "dev_name",
