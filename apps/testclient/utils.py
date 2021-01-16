@@ -6,6 +6,7 @@ from ..dot_ext.models import Application
 def test_setup(include_client_secret=True, v2=False):
     response = OrderedDict()
     ver = 'v2' if v2 else 'v1'
+    response['api_ver'] = ver
     oa2client = Application.objects.get(name="TestApp")
     response['client_id'] = oa2client.client_id
     if include_client_secret:

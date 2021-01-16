@@ -14,6 +14,10 @@
 		<h1>Sample API Call</h1>
 		<p>Below is a sample call for an application to allow a beneficiary to log in with their MyMedicare credentials and authorize access to their data.</p>
 
+		{% if api_ver is not None %}
+		<h2><strong>API version: {{ api_ver }}</strong></h2>
+		{% endif %}
+
 		<!-- Content Card -->
 		<div class="gradient-content-card">
 			<div class="content">

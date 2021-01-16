@@ -64,7 +64,9 @@ def callback(request):
 def test_links(request):
     # If authorization was successful, pass token to template
     if 'token' in request.session:
-        return render(request, 'home.html', context={"session_token": request.session['token']})
+        return render(request, 'home.html',
+                      context={"session_token": request.session['token'],
+                               "api_ver": request.session['api_ver']})
     else:
         return render(request, 'home.html', context={"session_token": None})
 
@@ -124,4 +126,5 @@ def authorize_link(request):
                         redirect_uri=request.session['redirect_uri'])
     authorization_url = oas.authorization_url(
         request.session['authorization_uri'])[0]
-    return render(request, 'authorize.html', {"authorization_url": authorization_url})
+    return render(request, 'authorize.html',
+                  {"authorization_url": authorization_url, "api_ver": request.session['api_ver']})

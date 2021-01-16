@@ -21,4 +21,17 @@ urlpatterns = [
     url(r'^public-applications$',
         waffle_switch('wellknown_applications')(PublicApplicationListView.as_view()),
         name='public-applications-list'),
+
+    url(r'^openid-configuration-v2$',
+        openid_configuration,
+        name='openid-configuration-v2'),
+    url(r'^applications-v2$',
+        waffle_switch('wellknown_applications')(ApplicationListView.as_view()),
+        name='applications-list-v2'),
+    url(r'^application-labels-v2$',
+        waffle_switch('wellknown_applications')(ApplicationLabelView.as_view()),
+        name='application-labels-v2'),
+    url(r'^public-applications-v2$',
+        waffle_switch('wellknown_applications')(PublicApplicationListView.as_view()),
+        name='public-applications-list-v2'),
 ]

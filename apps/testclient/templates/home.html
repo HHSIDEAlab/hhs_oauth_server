@@ -33,6 +33,10 @@ The Blue Button 2.0 API Test Client allows you to quickly see what it is like fo
 			</div>
 			{% endif %}
 
+			{% if api_ver is not None %}
+			<h2><strong>API version: {{ api_ver }}</strong></h2>
+			{% endif %}
+
 			<h2>Step 1: Sample Authorization</h2>
 			<!-- If a user does not have a token, give clear instructions about auth flow -->
 			{% if session_token is None %}
@@ -46,7 +50,16 @@ The Blue Button 2.0 API Test Client allows you to quickly see what it is like fo
 	
 			<!-- If a user DOES have a token, reflect the success of that action -->
 			{% if session_token is not None %}
-			<p>Success! You have a token. Now you can make API calls below. Or you can <a href="{% url 'authorize_link' %}">repeat this step if you need a new token.</a></p>
+			{% if api_ver == 'v2' %}
+				{% url 'authorize_link_v2' as auth_url %}
+				{% url 'fhir_conformance_metadata_v2' as meta_url %}
+				{% url 'openid-configuration-v2' as openid_cfg_url %}
+			{% else %}
+				{% url 'authorize_link_v2' as auth_url %}
+				{% url 'fhir_conformance_metadata' as meta_url %}
+				{% url 'openid-configuration' as openid_cfg_url %}
+			{% endif %}
+			<p>Success! You have a token. Now you can make API calls below. Or you can <a href="{{ auth_url }}">repeat this step if you need a new token.</a></p>
 
 			<br />
 
@@ -63,8 +76,8 @@ The Blue Button 2.0 API Test Client allows you to quickly see what it is like fo
 				<li> <a href="{% url 'test_patient' %}">Patient</a> </li>
 				<li> <a href="{% url 'test_coverage' %}">Coverage</a> </li>
 				<li> <a href="{% url 'test_userinfo' %}">Profile </a> (OIDC Userinfo)</li>
-				<li> <a href="{% url 'fhir_conformance_metadata' %}?format=json">FHIR Metadata</a> (No Token Needed)</li>
-				<li> <a href="{% url 'openid-configuration' %}">OIDC Discovery</a> (No Token Needed)</li>
+				<li> <a href="{{ meta_url }}?format=json">FHIR Metadata</a> (No Token Needed)</li>
+				<li> <a href="{{ openid_cfg_url }}">OIDC Discovery</a> (No Token Needed)</li>
 			</ul>
 
 			<h2 class="ds-u-margin-y--2">Additional Resources</h2>
