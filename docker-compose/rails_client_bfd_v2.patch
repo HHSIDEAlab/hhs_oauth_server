@@ -199,6 +199,27 @@ index 16922ee..072cb45 100644
      # Settings in config/environments/* take precedence over those specified here.
      # Application configuration can go into files in config/initializers
      # -- all .rb files in that directory are automatically loaded after loading
+diff --git a/config/local_env_sample.yml b/config/local_env_sample.yml
+index 9f8886c..604e4b1 100644
+--- a/config/local_env_sample.yml
++++ b/config/local_env_sample.yml
+@@ -8,10 +8,14 @@ development:
+   BB_CLIENT_SECRET: "<enter client secret here>"
+   # Callback handler URL:
+   BB_REDIRECT_URI: "http://localhost:3000/bluebutton/callback"
++  #BB_API_VER: "v2"
++  BB_API_VER: "v1"
+   # Authorization endpoint:
+-  BB_AUTHORIZE_URL: "https://sandbox.bluebutton.cms.gov/v1/o/authorize/"
++  BB_AUTHORIZE_URI: "/o/authorize/"
++  # BB_AUTHORIZE_URL: "https://sandbox.bluebutton.cms.gov/v1/o/authorize/"
+   # Exchange code for Token endpoint:
+-  BB_TOKEN_URL: "https://sandbox.bluebutton.cms.gov/v1/o/token/"
++  BB_TOKEN_URI: "/o/token/"
++  # BB_TOKEN_URL: "https://sandbox.bluebutton.cms.gov/v1/o/token/"
+   # Base Bluebutton site path:
+   BB_BASE_URL: "https://sandbox.bluebutton.cms.gov"
+ 
 diff --git a/db/seeds.rb b/db/seeds.rb
 deleted file mode 100644
 index 1beea2a..0000000
