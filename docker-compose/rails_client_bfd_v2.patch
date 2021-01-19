@@ -51,145 +51,167 @@ index 81de9c3..7f6a238 100644
 -   1.16.3
 +   1.17.3
 diff --git a/app/controllers/bluebutton/resources/resources_controller.rb b/app/controllers/bluebutton/resources/resources_controller.rb
-index 47af0c0..f20fe03 100644
+index 47af0c0..5e63a70 100644
 --- a/app/controllers/bluebutton/resources/resources_controller.rb
 +++ b/app/controllers/bluebutton/resources/resources_controller.rb
-@@ -19,18 +19,36 @@ class Bluebutton::Resources::ResourcesController < ApplicationController
+@@ -9,42 +9,47 @@ class Bluebutton::Resources::ResourcesController < ApplicationController
+ 
+   def userinfo
+     resource_title('User Info')
+-    @bb_response = @bluebutton_oauth_service.get_resource('/v1/connect/userinfo')
++    @bb_response = @bluebutton_oauth_service.get_resource('/' + @bluebutton_oauth_service.api_ver + '/connect/userinfo')
      render('result')
    end
  
-+  def patientV2
-+    resource_title('PatientV2 Information')
-+    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/Patient/?fhir_ver=r4')
-+    render('result')
-+  end
-+
+   def patient
+     resource_title('Patient Information')
+-    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/Patient/')
++    @bb_response = @bluebutton_oauth_service.get_resource('/' + @bluebutton_oauth_service.api_ver + '/fhir/Patient/')
+     render('result')
+   end
+ 
    def eob
      resource_title('Explanation Of Benefit')
-     @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/ExplanationOfBenefit/')
+-    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/ExplanationOfBenefit/')
++    @bb_response = @bluebutton_oauth_service.get_resource('/' + @bluebutton_oauth_service.api_ver + '/fhir/ExplanationOfBenefit/')
      render('result')
    end
  
-+  def eobV2
-+    resource_title('Explanation Of Benefit V2')
-+    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/ExplanationOfBenefit/?fhir_ver=r4')
-+    render('result')
-+  end
-+
    def coverage
      resource_title('Coverage')
-     @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/Coverage/')
+-    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/Coverage/')
++    @bb_response = @bluebutton_oauth_service.get_resource('/' + @bluebutton_oauth_service.api_ver + '/fhir/Coverage/')
      render('result')
    end
  
-+  def coverageV2
-+    resource_title('Coverage V2')
-+    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/Coverage/?fhir_ver=r4')
-+    render('result')
-+  end
-+
    def oidc
      resource_title('OIDC Discovery')
-     @bb_response = @bluebutton_oauth_service.get_resource('/.well-known/openid-configuration')
-@@ -43,6 +61,12 @@ class Bluebutton::Resources::ResourcesController < ApplicationController
+-    @bb_response = @bluebutton_oauth_service.get_resource('/.well-known/openid-configuration')
++    if @bluebutton_oauth_service.api_ver == 'v1'
++      @bb_response = @bluebutton_oauth_service.get_resource('/.well-known/openid-configuration')
++    else
++      @bb_response = @bluebutton_oauth_service.get_resource('/.well-known/openid-configuration-v2')
++    end
      render('result')
    end
  
-+  def fhirmetaV2
-+    resource_title('FHIR Metadata V2')
-+    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/metadata/?fhir_ver=r4')
-+    render('result')
-+  end
-+
+   def fhirmeta
+     resource_title('FHIR Metadata')
+-    @bb_response = @bluebutton_oauth_service.get_resource('/v1/fhir/metadata')
++    @bb_response = @bluebutton_oauth_service.get_resource('/' + @bluebutton_oauth_service.api_ver + '/fhir/metadata')
+     render('result')
+   end
+ 
    def get_resource
      resource_title(params[:resource_title])
++    p(params[:page_url])
      @bb_response = @bluebutton_oauth_service.get_resource(params[:page_url])
+     render('result')
+   end
+diff --git a/app/services/bluebutton_oauth_service.rb b/app/services/bluebutton_oauth_service.rb
+index 3c01e69..f680e90 100644
+--- a/app/services/bluebutton_oauth_service.rb
++++ b/app/services/bluebutton_oauth_service.rb
+@@ -5,16 +5,17 @@ class BluebuttonOauthService
+   BB_CLIENT_ID = LOCAL_ENV['BB_CLIENT_ID']
+   BB_CLIENT_SECRET = LOCAL_ENV['BB_CLIENT_SECRET']
+   BB_REDIRECT_URI = LOCAL_ENV['BB_REDIRECT_URI']
+-  BB_AUTHORIZE_URL = LOCAL_ENV['BB_AUTHORIZE_URL']
+-  BB_TOKEN_URL = LOCAL_ENV['BB_TOKEN_URL']
+   BB_BASE_URL = LOCAL_ENV['BB_BASE_URL']
+-  BB_REFER_URL = 'http://localhost:3000/bluebutton_authorize'
++  BB_AUTHORIZE_URL = BB_BASE_URL + '/' + LOCAL_ENV['BB_API_VER'] + LOCAL_ENV['BB_AUTHORIZE_URI']
++  BB_TOKEN_URL = BB_BASE_URL + '/' + LOCAL_ENV['BB_API_VER'] + LOCAL_ENV['BB_TOKEN_URI']
++  BB_REFER_URL = 'http://192.168.0.129:3000/bluebutton_authorize'
+ 
+-  attr_accessor :bb_acc_token, :state 
++  attr_accessor :bb_acc_token, :state, :api_ver
+ 
+   def initialize(bb_acc_token, state)
+     @bb_acc_token = bb_acc_token
+     @state = state
++    @api_ver = LOCAL_ENV['BB_API_VER']
+     @client = OAuth2::Client.new(BB_CLIENT_ID, BB_CLIENT_SECRET, {
+       :authorize_url => BB_AUTHORIZE_URL,
+       :token_url => BB_TOKEN_URL,
+@@ -80,6 +81,10 @@ class BluebuttonOauthService
+     nil
+   end
+ 
++  def api_ver
++    @api_ver
++  end
++
+   # Resource method:
+   def get_resource(url)
+     response_json = @access_token.get(url).body
+diff --git a/app/views/bluebutton/demo/authorize.html.erb b/app/views/bluebutton/demo/authorize.html.erb
+index c6f0d11..2104c6f 100644
+--- a/app/views/bluebutton/demo/authorize.html.erb
++++ b/app/views/bluebutton/demo/authorize.html.erb
+@@ -2,6 +2,11 @@
+ 
+ <h2>Authorize This Application </h2>
+ 
++<h2 style="color:red"><strong> API version: <%= @bluebutton_oauth_service.api_ver %></strong></h2>
++<p>BB_URL_PREFIX in settings (e.g. local_env.yml) indicates which API versions to use,<br>
++BB_URL_PREFIX: "v1" - use v1 API, "v2" - use v2 API, to switch, shutdown sample client,<br>
++change the setting, then start again.
++</p>
+ <h3>The following link will take you to the MyMedicare site to enter your login information and authorize this application to access your data.</h3>
+ 
+ <h2><%= link_to 'Click here to authorize!',  @bluebutton_oauth_service.get_authorize_url %></h2>
 diff --git a/app/views/bluebutton/demo/main.html.erb b/app/views/bluebutton/demo/main.html.erb
-index d07d0f7..c5d643f 100644
+index d07d0f7..bb38942 100644
 --- a/app/views/bluebutton/demo/main.html.erb
 +++ b/app/views/bluebutton/demo/main.html.erb
-@@ -23,16 +23,31 @@
-     <td><%= link_to 'Patient',  bluebutton_resources_patient_path %></td>
-   </tr>
+@@ -1,5 +1,7 @@
+ <h1> <b>Blue Button API Resources</b></h1>
  
-+  <tr>
-+    <td>Detailed information for patient V2</td>
-+    <td><%= link_to 'PatientV2',  bluebutton_resources_patientV2_path %></td>
-+  </tr>
++<h2 style="color:red"><strong> API version: <%= @bluebutton_oauth_service.api_ver %></strong></h2>
 +
-   <tr>
-     <td>Explanation of benefit information for patient</td>
-     <td><%= link_to 'ExplanationOfBenefit',  bluebutton_resources_eob_path %></td>
-   </tr>
+ <h2><u>Patient ID:  <%= session[:bb_patient_id] %> </u></h2>
  
-+  <tr>
-+    <td>Explanation of benefit information for patient V2</td>
-+    <td><%= link_to 'ExplanationOfBenefitV2',  bluebutton_resources_eobV2_path %></td>
-+  </tr>
+ <h3><%= link_to 'Click to return to the authorization page.',  root_path %></h3>
+diff --git a/app/views/bluebutton/resources/resources/result.html.erb b/app/views/bluebutton/resources/resources/result.html.erb
+index 7e9e0a7..03a338a 100644
+--- a/app/views/bluebutton/resources/resources/result.html.erb
++++ b/app/views/bluebutton/resources/resources/result.html.erb
+@@ -1,5 +1,7 @@
+ <h1> <%= @resource_title %></h1>
+ 
++<h2 style="color:red"><strong> API version: <%= @bluebutton_oauth_service.api_ver %></strong></h2>
 +
-   <tr>
-     <td>Coverage information for patient</td>
-     <td><%= link_to 'Coverage',  bluebutton_resources_coverage_path %></td>
-   </tr>
+ <h2><u> Patient ID: <%= session[:bb_patient_id] %></u></h2>
  
-+  <tr>
-+    <td>Coverage information for patient V2</td>
-+    <td><%= link_to 'CoverageV2',  bluebutton_resources_coverageV2_path %></td>
-+  </tr>
-+
-   <tr>
-     <td>OIDC Discovery</td>
-     <td><%= link_to 'OIDC_Disc',  bluebutton_resources_oidc_path %></td>
-@@ -43,5 +58,9 @@
-     <td><%= link_to 'FHIR_Meta',  bluebutton_resources_fhirmeta_path %></td>
-   </tr>
- 
-+  <tr>
-+    <td>FHIR Metadata</td>
-+    <td><%= link_to 'FHIR_Meta V2',  bluebutton_resources_fhirmetaV2_path %></td>
-+  </tr>
- </table>
- </h3>
-diff --git a/config/routes.rb b/config/routes.rb
-index 23dfc63..30a4ba0 100644
---- a/config/routes.rb
-+++ b/config/routes.rb
-@@ -20,18 +20,30 @@ Rails.application.routes.draw do
-       # Bluebutton resource: patient
-       get 'patient', to: 'resources#patient', as: 'patient'
- 
--      # Bluebutton resource: eob = Explanation of Benefit 
-+      # Bluebutton resource: patientV2
-+      get 'patientV2', to: 'resources#patientV2', as: 'patientV2'
-+
-+      # Bluebutton resource: eob = Explanation of Benefit
-       get 'eob', to: 'resources#eob', as: 'eob'
- 
--      # Bluebutton resource: Coverage  
-+      # Bluebutton resource: eobV2 = Explanation of Benefit V2
-+      get 'eobV2', to: 'resources#eobV2', as: 'eobV2'
-+
-+      # Bluebutton resource: Coverage
-       get 'coverage', to: 'resources#coverage', as: 'coverage'
- 
-+      # Bluebutton resource: CoverageV2
-+      get 'coverageV2', to: 'resources#coverageV2', as: 'coverageV2'
-+
-       # Bluebutton resource: OIDC Discovery 
-       get 'oidc', to: 'resources#oidc', as: 'oidc'
- 
-       # Bluebutton resource: FHIR Metadata 
-       get 'fhirmeta', to: 'resources#fhirmeta', as: 'fhirmeta'
- 
-+      # Bluebutton resource: FHIR MetadataV2
-+      get 'fhirmetaV2', to: 'resources#fhirmetaV2', as: 'fhirmetaV2'
-+
-       # Bluebutton resource: get_resource (for JSON responses with paging links)
-       get 'get_resource', to: 'resources#get_resource', as: 'get_resource'
- 
-diff --git a/log/.keep b/log/.keep
+ <h3><%= link_to 'Click to return to the resources demo page.',  bluebutton_main_path %></h3>
+diff --git a/config/application.rb b/config/application.rb
+index 16922ee..072cb45 100644
+--- a/config/application.rb
++++ b/config/application.rb
+@@ -10,7 +10,8 @@ module Code
+   class Application < Rails::Application
+     # Initialize configuration defaults for originally generated Rails version.
+     config.load_defaults 5.2
+-
++    # white list some IPs
++    # config.web_console.whitelisted_ips = '0.0.0.0', '192.168.0.109', '192.168.32.1'
+     # Settings in config/environments/* take precedence over those specified here.
+     # Application configuration can go into files in config/initializers
+     # -- all .rb files in that directory are automatically loaded after loading
+diff --git a/db/seeds.rb b/db/seeds.rb
 deleted file mode 100644
-index e69de29..0000000
+index 1beea2a..0000000
+--- a/db/seeds.rb
++++ /dev/null
+@@ -1,7 +0,0 @@
+-# This file should contain all the record creation needed to seed the database with its default values.
+-# The data can then be loaded with the rails db:seed command (or created alongside the database with db:setup).
+-#
+-# Examples:
+-#
+-#   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
+-#   Character.create(name: 'Luke', movie: movies.first)
 diff --git a/tmp/.keep b/tmp/.keep
 deleted file mode 100644
 index e69de29..0000000
