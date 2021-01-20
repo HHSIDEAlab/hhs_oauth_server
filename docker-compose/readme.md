@@ -214,7 +214,7 @@ curl -k -v --header "Authorization: Bearer ${ACCESS_TOKEN}"  "${HOST}/v1/fhir/Ex
 
 1. git clone https://github.com/CMSgov/bluebutton-sample-client-rails.git
 2. change directory to sample rails client local repo
-3. Apply BFD V2 support patch: git apply rails_client_bfd_v2.patch
+3. Apply BFD V2 support patch: git apply rails_client_bfd_v2.patch (note on win or cygwin, need to dos2unix the patch)
 4. Follow sample rails client readme to point to the app created registered on BlueButton server
 5. At rails sample client local repo base directory, run docker-compose up
 6. Point browser to http://localhost:3000, and start authorization and resource read/search

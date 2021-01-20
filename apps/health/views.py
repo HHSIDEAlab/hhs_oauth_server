@@ -22,7 +22,8 @@ class Check(APIView):
     def get(self, request, format=None):
         try:
             for check in self.get_services():
-                if not check():
+                v2 = True if request.path.endswith('external_v2') else False
+                if not check(v2):
                     raise ServiceUnavailable()
         except ServiceUnavailable:
             raise
