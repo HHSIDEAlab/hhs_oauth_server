@@ -1,4 +1,4 @@
-FROM python:3.8.7
+FROM python:3.6.12
 ENV PYTHONUNBUFFERED 1
 RUN mkdir /code
 ADD . /code/

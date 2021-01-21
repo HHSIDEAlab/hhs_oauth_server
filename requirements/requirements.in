@@ -2,19 +2,19 @@
 django==2.2.17
 django-getenv
 django-bootstrap-form
-django-cors-headers
+django-cors-headers==3.6.0
 django-localflavor
 django-settings-export
-djangorestframework==3.12.0
-djangorestframework-csv
+djangorestframework==3.12.2
+djangorestframework-csv==2.1.0
 django-filter
 django-axes
 
 # support
-django-waffle
+django-waffle==2.0.0
 django-storages
 django-dotenv
-jsonschema
+jsonschema==3.2.0
 requests==2.25.1
 requests_oauthlib
 pytz
@@ -24,10 +24,10 @@ pyjwt
 newrelic
 psycopg2-binary
 sqlparse
-Pillow==7.2.0
+Pillow==8.1.0
 boto3
-djangorestframework-yaml
-voluptuous
+djangorestframework-yaml==2.0.0
+voluptuous==0.12.1
 
 # notifications
 django-ses

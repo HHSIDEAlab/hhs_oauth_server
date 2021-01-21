@@ -1,11 +1,11 @@
 -r requirements.in
 # test and development
-coverage
-python-coveralls
+coverage==5.3.1
+python-coveralls==2.9.3
 tox==3.21.0
 flake8==3.8.4
-django-debug-toolbar
-httmock
+django-debug-toolbar==3.2
+httmock==1.4.0
 ptvsd
 beautifulsoup4
 
