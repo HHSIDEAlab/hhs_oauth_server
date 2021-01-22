@@ -37,7 +37,7 @@ Note that stop_server.sh executes docker-compose down to stop and remove the con
 
 Blue Button server configuration values: DJANGO_USER_ID_SALT, DJANGO_USER_ID_ITERATIONS, PASSWORD_HASH_ITERATIONS
 are server secrets and stored in password encrypted vault file, the password is kept in a password file
-stored in a secured store (e.g. keybase), the following variables in .env need to be set properly to make
+stored in a secured store, the following variables in .env need to be set properly to make
 the secrets available to server start process and leave no trace of the secret values outside the secured store and vault file.
  
 When the fhir server is a local bfd, the salt, iterations etc. use default values in blue button server settings,
@@ -52,7 +52,7 @@ BFD_CLIENT_TRUSTED_PFX="path to client-trusted-keystore.pfx in bfd local git rep
 ```
 
 When the fhir server is a remote bfd, the salt, iterations etc. are extracted from the vault file, and the password
-is stored in a secured store (e.g. keybase), the client cert and key files are stored in secured store, and indicated by
+is stored in a secured store, the client cert and key files are stored in secured store, and indicated by
 SRC_CERT_FILE, SRC_KEY_FILE, and are copied to blue button server certstore automatically if they are not there already.
 
 ```
@@ -60,8 +60,8 @@ USE_LOCAL_BFD=false
 FHIR_URL="url to remote bfd e.g. https://prod-sbx.bfd.cms.gov/v1/fhir/"
 VAULT_PASSFILE="path-to-vault-password-file" (usually in secured store)
 VAULT_FILE="path-to-vault-file" (in bluebutton-web-deployment local git repo)
-SRC_CERT_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_certificate.pem" (usually in secured store)
-SRC_KEY_FILE="/cygdrive/k/my_secured_store/fhir_client/client_data_server_bluebutton_local_private_key.pem" (usually in secured store)
+SRC_CERT_FILE="/my_secured_store/my_cert_store/my_client_certificate.pem" (usually in secured store)
+SRC_KEY_FILE="/my_secured_store/my_cert_store/my_client_private_key.pem" (usually in secured store)
 
 ```
 
