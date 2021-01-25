@@ -26,13 +26,11 @@ def callback(request):
     if not(host.startswith("http://") or host.startswith("https://")):
         host = "https://%s" % (host)
     auth_uri = host + request.get_full_path()
-    token_uri = host + reverse('oauth2_provider:token')
-    request.session['api_ver'] = 'v1'
-    if request.path.endswith('callback-v2'):
-        token_uri = host + reverse('oauth2_provider_v2:token-v2')
-        request.session['api_ver'] = 'v2'
+    token_uri = host
+    api_ver = request.session['api_ver']
+    token_uri += reverse('oauth2_provider_v2:token-v2') if api_ver == 'v2' else reverse('oauth2_provider:token')
+
     try:
-        token_uri = host + reverse('oauth2_provider:token')
         token = oas.fetch_token(token_uri,
                                 client_secret=get_client_secret(),
                                 authorization_response=auth_uri)

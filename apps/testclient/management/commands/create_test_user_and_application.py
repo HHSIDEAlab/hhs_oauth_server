@@ -52,11 +52,10 @@ def create_user(group):
 def create_application(user, group):
     Application.objects.filter(name="TestApp").delete()
     redirect_uri = "{}{}".format(settings.HOSTNAME_URL, settings.TESTCLIENT_REDIRECT_URI)
-    redirect_uri_v2 = "{}{}".format(settings.HOSTNAME_URL, settings.TESTCLIENT_REDIRECT_URI_V2)
     if not(redirect_uri.startswith("http://") or redirect_uri.startswith("https://")):
         redirect_uri = "https://" + redirect_uri
     a = Application.objects.create(name="TestApp",
-                                   redirect_uris="{}{}{}".format(redirect_uri, "\n", redirect_uri_v2),
+                                   redirect_uris=redirect_uri,
                                    user=user,
                                    client_type="confidential",
                                    authorization_grant_type="authorization-code")

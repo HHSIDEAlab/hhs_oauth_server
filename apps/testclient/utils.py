@@ -15,11 +15,7 @@ def test_setup(include_client_secret=True, v2=False):
     if not (host.startswith("http://") or host.startswith("https://")):
         host = "https://" + host
     response['resource_uri'] = host
-    # this has to match app's redirect uri
-    if v2:
-        response['redirect_uri'] = '{}{}'.format(host, settings.TESTCLIENT_REDIRECT_URI_V2)
-    else:
-        response['redirect_uri'] = '{}{}'.format(host, settings.TESTCLIENT_REDIRECT_URI)
+    response['redirect_uri'] = '{}{}'.format(host, settings.TESTCLIENT_REDIRECT_URI)
     response['authorization_uri'] = '{}/{}/o/authorize/'.format(host, ver)
     response['token_uri'] = '{}/{}/o/token/'.format(host, ver)
     response['userinfo_uri'] = '{}/{}/connect/userinfo'.format(host, ver)
