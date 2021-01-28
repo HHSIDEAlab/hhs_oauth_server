@@ -30,11 +30,12 @@ services:
             - DJANGO_SECURE_SESSION=False
             - FHIR_URL=${FHIR_URL}
             - DJANGO_FHIR_CERTSTORE=${DJANGO_FHIR_CERTSTORE}
-            - DJANGO_MEDICARE_LOGIN_URI=http://127.0.0.1:8080?scope=openid%20profile&client_id=bluebutton
+            - DJANGO_MEDICARE_LOGIN_URI=http://192.168.0.109:8080?scope=openid%20profile&client_id=bluebutton
             - DJANGO_MEDICARE_REDIRECT_URI=http://localhost:8000/mymedicare/sls-callback
             - DJANGO_SLS_USERINFO_ENDPOINT=http://msls:8080/userinfo
             - DJANGO_SLS_TOKEN_ENDPOINT=http://msls:8080/token
-            - DJANGO_SLSX_CLIENT_ID=bb2api
+            - DJANGO_SLSX_CLIENT_ID=${DJANGO_SLSX_CLIENT_ID}
+            - DJANGO_SLSX_CLIENT_SECRET=${DJANGO_SLSX_CLIENT_SECRET}
             - DJANGO_MEDICARE_SLSX_LOGIN_URI=https://test.medicare.gov/sso/authorize?client_id=bb2api
             - DJANGO_MEDICARE_SLSX_REDIRECT_URI=http://localhost:8000/mymedicare/sls-callback
             - DJANGO_SLSX_HEALTH_CHECK_ENDPOINT=https://test.accounts.cms.gov/health
@@ -47,6 +48,7 @@ services:
             - REMOTE_DEBUG=${REMOTE_DEBUG}
             - REMOTE_DEBUG_WAIT=${REMOTE_DEBUG_WAIT}
             - HOSTNAME_URL=${HOSTNAME_URL}
+            - SLSX_ENABLED=${SLSX_ENABLED}
             - DB_MIGRATIONS=${DB_MIGRATIONS}
     volumes:
       - .:/code

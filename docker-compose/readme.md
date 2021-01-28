@@ -72,6 +72,10 @@ as shown in sample below, this is required to make service in container work pro
 HOSTNAME_URL="http://192.168.0.109:8000"
 
 ```
+## MSLS (local SLS simulator)
+Currently SLSX feature flag is on, which prevent MSLS being used in the authentication and authorization,
+work around: go to create_test_feature_switches.py and change 'slsx-enable' to False before start bb2,
+need to do this before MSLS is re-factored to simulate SLSX.
 
 ## Sample beneficiaries (from BFD synthetic data)
 

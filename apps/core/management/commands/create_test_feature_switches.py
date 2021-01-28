@@ -1,3 +1,4 @@
+import os
 from django.core.management.base import BaseCommand
 from waffle.models import Switch
 
@@ -20,7 +21,13 @@ class Command(BaseCommand):
                 Switch.objects.get(name=switch[0])
                 self._log('Feature switch already exists: %s' % (str(switch)))
             except Switch.DoesNotExist:
-                Switch.objects.create(name=switch[0], active=switch[1])
+                sw = switch[1]
+                if switch[0] == "slsx-enable":
+                    SLSX_ENABLED = os.environ['SLSX_ENABLED']
+                    if SLSX_ENABLED is not None and SLSX_ENABLED == "False":
+                        sw = False
+                        switch[1] = sw
+                Switch.objects.create(name=switch[0], active=sw)
                 self._log('Feature switch created: %s' % (str(switch)))
 
     def _log(self, message):

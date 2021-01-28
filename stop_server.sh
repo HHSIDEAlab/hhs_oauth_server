@@ -29,8 +29,36 @@ function export_vars() {
 # just satisfying compose so no env var warnings emitted
 export_vars
 
+if [ -z ${FHIR_CERT_FILE} ]
+then
+    export FHIR_CERT_FILE="ca.cert.pem"
+fi
+
+if [ -z ${FHIR_KEY_FILE} ]
+then
+    export FHIR_KEY_FILE="ca.key.nocrypt.pem"
+fi
+
+if [ -z ${FHIR_CERTSTORE_ON_HOST} ]
+then
+    export FHIR_CERTSTORE_ON_HOST="./docker-compose/certstore"
+fi
+
 export DB_MIGRATIONS=true 
 export DJANGO_DEFAULT_SAMPLE_FHIR_ID="dummy"
 export DJANGO_FHIR_CERTSTORE="dummy"
 
 docker-compose down
+
+if [ -f "${FHIR_CERTSTORE_ON_HOST}/${FHIR_CERT_FILE}" ]
+then
+    echo "cleanup client cert file."
+    rm -f "${FHIR_CERTSTORE_ON_HOST}/${FHIR_CERT_FILE}"
+fi
+
+if [ -f "${FHIR_CERTSTORE_ON_HOST}/${FHIR_KEY_FILE}" ]
+then
+    echo "cleanup client key file."
+    rm -f "${FHIR_CERTSTORE_ON_HOST}/${FHIR_KEY_FILE}"
+fi
+

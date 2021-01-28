@@ -36,6 +36,7 @@ function export_vars() {
     BFD_CLIENT_TRUSTED_PFX \
     SRC_CERT_FILE \
     SRC_KEY_FILE \
+    SLSX_ENABLED \
     FHIR_CERTSTORE_ON_HOST
     do
         echo ${v} "=" ${!v}
@@ -102,6 +103,8 @@ function start_server_with_remote_bfd() {
         DJANGO_USER_ID_SALT=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_django_user_id_salt" | awk '{print $2}')
         DJANGO_USER_ID_ITERATIONS=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_django_user_id_iterations" | awk '{print $2}')
         DJANGO_PASSWORD_HASH_ITERATIONS=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_django_password_hash_iterations" | awk '{print $2}')
+        DJANGO_SLSX_CLIENT_ID=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_slsx_client_id" | awk '{print $2}')
+        DJANGO_SLSX_CLIENT_SECRET=$(ansible-vault view --vault-password-file=${VAULT_PASSFILE} ${VAULT_FILE} | grep "^vault_env_slsx_client_secret" | awk '{print $2}')
 
         if [ ! -z ${DJANGO_USER_ID_SALT} ]
         then
@@ -116,6 +119,16 @@ function start_server_with_remote_bfd() {
         if [ ! -z ${DJANGO_PASSWORD_HASH_ITERATIONS} ]
         then
             export DJANGO_PASSWORD_HASH_ITERATIONS=${DJANGO_PASSWORD_HASH_ITERATIONS}
+        fi
+
+        if [ ! -z ${DJANGO_SLSX_CLIENT_ID} ]
+        then
+            export DJANGO_SLSX_CLIENT_ID=${DJANGO_SLSX_CLIENT_ID}
+        fi
+
+        if [ ! -z ${DJANGO_SLSX_CLIENT_SECRET} ]
+        then
+            export DJANGO_SLSX_CLIENT_SECRET=${DJANGO_SLSX_CLIENT_SECRET}
         fi
 
         if [ -f "${SRC_CERT_FILE}" ] && [ -f "${SRC_KEY_FILE}" ]
