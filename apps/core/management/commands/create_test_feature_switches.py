@@ -23,12 +23,15 @@ class Command(BaseCommand):
             except Switch.DoesNotExist:
                 sw = switch[1]
                 if switch[0] == "slsx-enable":
+                    # override for now
                     SLSX_ENABLED = os.environ['SLSX_ENABLED']
                     if SLSX_ENABLED is not None and SLSX_ENABLED == "False":
                         sw = False
-                        switch[1] = sw
-                Switch.objects.create(name=switch[0], active=sw)
-                self._log('Feature switch created: %s' % (str(switch)))
+                    Switch.objects.create(name=switch[0], active=sw)
+                    self._log('Feature switch created: %s' % (str((switch[0], sw))))
+                else:
+                    Switch.objects.create(name=switch[0], active=switch[1])
+                    self._log('Feature switch created: %s' % (str(switch)))
 
     def _log(self, message):
         self.stdout.write(message)
